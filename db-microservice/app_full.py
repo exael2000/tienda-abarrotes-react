@@ -4,7 +4,7 @@ import os
 
 # Configurar Flask para servir archivos estáticos desde la carpeta build
 app = Flask(__name__, 
-            static_folder='../build',  # Carpeta donde están los archivos del frontend
+            static_folder='build',  # Carpeta donde están los archivos del frontend
             static_url_path='')
 
 # CORS manual (funciona mejor que Flask-CORS en PythonAnywhere)
@@ -91,15 +91,15 @@ def get_brands():
 @app.route('/')
 def serve_frontend():
     """Servir la página principal del frontend"""
-    return send_file('../build/index.html')
+    return send_file('build/index.html')
 
 @app.route('/images/<path:filename>')
 def serve_images(filename):
     """Servir imágenes de productos"""
     try:
-        return send_from_directory('../build/images', filename)
+        return send_from_directory('build/images', filename)
     except:
-        return send_from_directory('../build/images/products', 'placeholder.svg')
+        return send_from_directory('build/images/products', 'placeholder.svg')
 
 @app.route('/<path:path>')
 def serve_static_files(path):
@@ -111,10 +111,10 @@ def serve_static_files(path):
     
     # Intentar servir el archivo estático
     try:
-        return send_from_directory('../build', path)
+        return send_from_directory('build', path)
     except:
         # Si no existe el archivo, servir index.html (para SPA routing)
-        return send_file('../build/index.html')
+        return send_file('build/index.html')
 
 if __name__ == '__main__':
     # Configuración para desarrollo local
