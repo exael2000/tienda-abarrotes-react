@@ -1,33 +1,176 @@
-# Getting Started with Create React App
+# 🛒 Tienda de Abarrotes React
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Una aplicación completa de tienda de abarrotes desarrollada con React, Flask y SQLite, utilizando arquitectura de microservicios.
 
-## Available Scripts
+## 📋 Características
 
-In the project directory, you can run:
+- **34 productos** organizados por proveedores (Bimbo, Gamesa, Sabritas, La Costeña, Barcel)
+- **Arquitectura de microservicios** con Flask
+- **Frontend React** moderno y responsivo
+- **Base de datos SQLite** con información detallada de productos
+- **Imágenes de productos** incluidas
+- **API REST** completa con filtros
+- **Preparado para deploy** en PythonAnywhere
 
-### `npm start`
+## 🏗️ Arquitectura
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```
+Frontend (React) → Backend (Flask) → DB Microservice (Flask + SQLite)
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **Frontend**: React 19.2.0 con Axios para API calls
+- **Backend**: Flask API que actúa como gateway
+- **DB Microservice**: Flask + SQLite con todos los productos
+- **Imágenes**: Servidas desde `/public/images/products/`
 
-### `npm test`
+## 🚀 Instalación y Uso Local
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 1. Clonar el repositorio
+```bash
+git clone <tu-repo-url>
+cd tienda-abarrotes-react
+```
 
-### `npm run build`
+### 2. Instalar dependencias de React
+```bash
+npm install
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 3. Configurar el entorno Python
+```bash
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# Linux/Mac
+source .venv/bin/activate
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 4. Instalar dependencias Python
+```bash
+pip install -r db-microservice/requirements.txt
+pip install -r backend/requirements.txt
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 5. Inicializar la base de datos
+```bash
+cd db-microservice
+python update_products.py
+```
+
+### 6. Ejecutar los servicios
+
+#### Terminal 1 - DB Microservice (Puerto 5001)
+```bash
+cd db-microservice
+python app.py
+```
+
+#### Terminal 2 - Backend API (Puerto 5000)
+```bash
+cd backend
+python app.py
+```
+
+#### Terminal 3 - Frontend React (Puerto 3000)
+```bash
+npm start
+```
+
+### 7. Acceder a la aplicación
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:5000/api/products
+- **DB Microservice**: http://localhost:5001/api/products
+
+## 📊 Productos Incluidos
+
+### Proveedores y Marcas:
+- **Bimbo** (7 productos): Mantecadas, Pan, Donas, Roles, Panqué
+- **Gamesa** (7 productos): Galletas Marías, Emperador, Chokis, etc.
+- **Sabritas** (7 productos): Papas, Cheetos, Doritos, Ruffles, etc.
+- **La Costeña** (7 productos): Chiles, Frijoles, Salsas, etc.
+- **Barcel** (6 productos): Takis, Chips, Hot Nuts, etc.
+
+## 🔧 API Endpoints
+
+### Productos
+- `GET /api/products` - Listar todos los productos
+- `GET /api/products?supplier=bimbo` - Filtrar por proveedor
+- `GET /api/products?brand=Sabritas` - Filtrar por marca
+- `GET /api/products/:id` - Obtener producto específico
+
+### Información adicional
+- `GET /api/suppliers` - Listar proveedores
+- `GET /api/brands` - Listar marcas
+
+## 🌐 Deploy en PythonAnywhere
+
+### 1. Subir archivos
+Subir la carpeta `db-microservice/` completa a tu cuenta de PythonAnywhere.
+
+### 2. Configurar Web App
+- Framework: Manual configuration
+- Python: 3.10
+- Source code: `/home/tuusuario/tienda-abarrotes/db-microservice`
+
+### 3. Configurar WSGI
+Editar `/var/www/tuusuario_pythonanywhere_com_wsgi.py` con el contenido de `wsgi.py`
+
+### 4. Instalar dependencias
+```bash
+pip3.10 install --user -r requirements.txt
+```
+
+### 5. Inicializar BD
+```bash
+python3.10 update_products.py
+```
+
+### 6. Actualizar frontend
+Cambiar `API_URL` en `src/services/api.js`:
+```javascript
+const API_URL = 'https://tuusuario.pythonanywhere.com/api';
+```
+
+## 📁 Estructura del Proyecto
+
+```
+tienda-abarrotes-react/
+├── public/
+│   └── images/products/          # Imágenes de productos
+├── src/
+│   ├── components/               # Componentes React
+│   └── services/                 # API services
+├── backend/                      # Backend Flask
+├── db-microservice/             # Microservicio de BD
+│   ├── app.py                   # API principal
+│   ├── wsgi.py                  # Para PythonAnywhere
+│   ├── update_products.py       # Script de población
+│   └── requirements.txt         # Dependencias Python
+├── DEPLOY_GUIDE.md              # Guía de despliegue
+└── deploy_instructions.sh       # Script de instalación
+```
+
+## 🛠️ Tecnologías Utilizadas
+
+- **Frontend**: React, Axios, CSS3
+- **Backend**: Flask, Flask-CORS
+- **Base de Datos**: SQLite
+- **Deploy**: PythonAnywhere
+- **Control de Versiones**: Git
+
+## 👨‍💻 Desarrollo
+
+Para continuar el desarrollo:
+
+1. **Carrito funcional**: Implementar agregar/quitar productos
+2. **Checkout**: Integración con Stripe
+3. **Autenticación**: Sistema de usuarios
+4. **Admin Panel**: Gestión de productos
+5. **Búsqueda**: Filtros avanzados
+
+## 📄 Licencia
+
+Este proyecto es de código abierto y está disponible bajo la licencia MIT.
 
 ### `npm run eject`
 
