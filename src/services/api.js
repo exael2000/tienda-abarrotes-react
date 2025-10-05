@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // URLs de los servicios
-const API_URL = 'http://localhost:5000/api';
+const API_URL = '/api';
 
 // Configuración de axios con timeout
 const api = axios.create({
