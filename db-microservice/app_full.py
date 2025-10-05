@@ -2,9 +2,13 @@ from flask import Flask, jsonify, request, send_from_directory, send_file
 import sqlite3
 import os
 
+# Obtener la ruta del directorio raíz del proyecto
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)  # Un nivel arriba desde db-microservice
+
 # Configurar Flask para servir archivos estáticos desde la carpeta build
 app = Flask(__name__, 
-            static_folder='build',  # Carpeta donde están los archivos del frontend
+            static_folder=os.path.join(project_root, 'build'),  # Ruta absoluta a build
             static_url_path='')
 
 # CORS manual (funciona mejor que Flask-CORS en PythonAnywhere)
@@ -16,7 +20,9 @@ def after_request(response):
     return response
 
 def get_db_connection():
-    conn = sqlite3.connect('db.sqlite3')
+    # Usar ruta absoluta para la base de datos
+    db_path = os.path.join(project_root, 'db.sqlite3')
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -91,15 +97,20 @@ def get_brands():
 @app.route('/')
 def serve_frontend():
     """Servir la página principal del frontend"""
-    return send_file('build/index.html')
+    index_path = os.path.join(project_root, 'build', 'index.html')
+    return send_file(index_path)
 
 @app.route('/images/<path:filename>')
 def serve_images(filename):
     """Servir imágenes de productos"""
     try:
-        return send_from_directory('build/images', filename)
+        # Las imágenes se buscan directamente en build/images/ 
+        # porque filename ya incluye "products/imagen.jpg"
+        images_path = os.path.join(project_root, 'build', 'images')
+        return send_from_directory(images_path, filename)
     except:
-        return send_from_directory('build/images/products', 'placeholder.svg')
+        placeholder_path = os.path.join(project_root, 'build', 'images', 'products')
+        return send_from_directory(placeholder_path, 'placeholder.svg')
 
 @app.route('/<path:path>')
 def serve_static_files(path):
@@ -111,10 +122,12 @@ def serve_static_files(path):
     
     # Intentar servir el archivo estático
     try:
-        return send_from_directory('build', path)
+        build_path = os.path.join(project_root, 'build')
+        return send_from_directory(build_path, path)
     except:
         # Si no existe el archivo, servir index.html (para SPA routing)
-        return send_file('build/index.html')
+        index_path = os.path.join(project_root, 'build', 'index.html')
+        return send_file(index_path)
 
 if __name__ == '__main__':
     # Configuración para desarrollo local
