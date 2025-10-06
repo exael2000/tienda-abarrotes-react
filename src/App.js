@@ -1,21 +1,22 @@
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { CartProvider } from './context/CartContext';
 import ProductList from './components/ProductList';
 import Cart from './components/Cart';
-import Checkout from './components/Checkout';
-import logo from './logo.svg';
 import './App.css';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <h1>Tienda Abarrotes</h1>
-      </header>
-      <ProductList />
-      <Cart />
-      <Checkout />
-    </div>
+    <CartProvider>
+      <Router>
+        <div className="App">
+          <Routes>
+            <Route path="/" element={<ProductList />} />
+            <Route path="/cart" element={<Cart />} />
+          </Routes>
+        </div>
+      </Router>
+    </CartProvider>
   );
 }
 

@@ -29,14 +29,3 @@ export const getProduct = (productId) => api.get(`${API_URL}/products/${productI
 export const getSuppliers = () => api.get(`${API_URL}/suppliers`);
 
 export const getBrands = () => api.get(`${API_URL}/brands`);
-
-// Aquí puedes agregar más funciones para carrito, checkout, etc.
-export const addToCart = (productId, quantity = 1) => {
-  // Por ahora devuelve una promesa simulada
-  return Promise.resolve({ success: true, productId, quantity });
-};
-
-export const getCart = () => {
-  // Por ahora devuelve un carrito vacío
-  return Promise.resolve({ items: [], total: 0 });
-};
