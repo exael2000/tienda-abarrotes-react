@@ -1,19 +1,41 @@
 {
   "name": "tienda-abarrotes-react",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "Aplicación web completa de e-commerce para tienda de abarrotes con React y Flask",
   "private": true,
+  "homepage": "https://exael.pythonanywhere.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/exael2000/tienda-abarrotes-react.git"
+  },
+  "keywords": [
+    "react",
+    "ecommerce",
+    "flask",
+    "tienda",
+    "abarrotes",
+    "cart",
+    "authentication"
+  ],
+  "author": "Exael",
+  "license": "MIT",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
-    "@testing-library/user-event": "^13.5.0",
+    "@testing-library/user-event": "^14.5.2",
     "axios": "^1.12.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.3",
     "react-scripts": "5.0.1",
-    "stripe": "^19.1.0",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^4.2.4"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.6",
+    "@types/react": "^19.0.6",
+    "@types/react-dom": "^19.0.3"
   },
   "scripts": {
     "start": "react-scripts start",
