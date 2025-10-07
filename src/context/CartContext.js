@@ -1,4 +1,4 @@
-import React, { createContext, useReducer, useEffect } from 'react';
+import React, { createContext, useReducer, useEffect, useCallback } from 'react';
 
 // Actions
 const CART_ACTIONS = {
@@ -103,7 +103,7 @@ export function CartProvider({ children }) {
   }, [state.cartItems]);
 
   // Funciones del carrito
-  const addToCart = (product, quantity = 1) => {
+  const addToCart = async (product, quantity = 1) => {
     if (product.stock <= 0) {
       alert('Producto sin stock disponible');
       return;
@@ -113,20 +113,81 @@ export function CartProvider({ children }) {
       type: CART_ACTIONS.ADD_TO_CART,
       payload: { ...product, quantity }
     });
+
+    // Sincronizar con BD si está autenticado y no es invitado
+    const token = localStorage.getItem('access_token');
+    const isGuest = localStorage.getItem('isGuest') === 'true';
+    
+    if (token && !isGuest) {
+      try {
+        await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ 
+            product_id: product.id, 
+            quantity: quantity 
+          })
+        });
+      } catch (error) {
+        console.error('Error syncing add to cart with DB:', error);
+      }
+    }
   };
 
-  const removeFromCart = (productId) => {
+  const removeFromCart = async (productId) => {
     dispatch({
       type: CART_ACTIONS.REMOVE_FROM_CART,
       payload: productId
     });
+
+    // Sincronizar con BD si está autenticado y no es invitado
+    const token = localStorage.getItem('access_token');
+    const isGuest = localStorage.getItem('isGuest') === 'true';
+    
+    if (token && !isGuest) {
+      try {
+        await fetch(`/api/cart/remove?product_id=${productId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } catch (error) {
+        console.error('Error syncing remove from cart with DB:', error);
+      }
+    }
   };
 
-  const updateQuantity = (productId, newQuantity) => {
+  const updateQuantity = async (productId, newQuantity) => {
     dispatch({
       type: CART_ACTIONS.UPDATE_QUANTITY,
       payload: { id: productId, quantity: newQuantity }
     });
+
+    // Sincronizar con BD si está autenticado y no es invitado
+    const token = localStorage.getItem('access_token');
+    const isGuest = localStorage.getItem('isGuest') === 'true';
+    
+    if (token && !isGuest) {
+      try {
+        await fetch('/api/cart/update', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ 
+            product_id: productId, 
+            quantity: newQuantity 
+          })
+        });
+      } catch (error) {
+        console.error('Error syncing update quantity with DB:', error);
+      }
+    }
   };
 
   const clearCart = () => {
@@ -154,6 +215,100 @@ export function CartProvider({ children }) {
     return item ? item.quantity : 0;
   };
 
+  const loadPendingCart = () => {
+    const pendingCart = localStorage.getItem('pendingCart');
+    if (pendingCart) {
+      try {
+        const cartData = JSON.parse(pendingCart);
+        // Combinar el carrito pendiente con el actual
+        if (cartData.length > 0) {
+          cartData.forEach(item => {
+            addToCart(item, item.quantity);
+          });
+        }
+        // Limpiar el carrito pendiente después de cargarlo
+        localStorage.removeItem('pendingCart');
+        return true;
+      } catch (error) {
+        console.error('Error loading pending cart:', error);
+        localStorage.removeItem('pendingCart');
+      }
+    }
+    return false;
+  };
+
+  // Funciones de sincronización con la base de datos
+  const loadCartFromDB = async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return false;
+
+    try {
+      const response = await fetch('/api/cart', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const cartData = await response.json();
+        dispatch({ type: CART_ACTIONS.LOAD_CART, payload: cartData });
+        return true;
+      }
+    } catch (error) {
+      console.error('Error loading cart from DB:', error);
+    }
+    return false;
+  };
+
+  const syncCartWithDB = async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token || state.cartItems.length === 0) return false;
+
+    try {
+      const response = await fetch('/api/cart/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ cart_items: state.cartItems })
+      });
+
+      if (response.ok) {
+        // Después de sincronizar, cargar el carrito actualizado desde la BD
+        await loadCartFromDB();
+        return true;
+      }
+    } catch (error) {
+      console.error('Error syncing cart with DB:', error);
+    }
+    return false;
+  };
+
+  const saveCartToDB = async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return false;
+
+    try {
+      // Sincronizar todos los items actuales del carrito
+      await syncCartWithDB();
+      return true;
+    } catch (error) {
+      console.error('Error saving cart to DB:', error);
+    }
+    return false;
+  };
+
+  const combineCartWithGuest = async () => {
+    // Primero cargar desde BD si el usuario ya tenía un carrito
+    await loadCartFromDB();
+    
+    // Luego cargar el carrito pendiente (del usuario invitado) si existe
+    const hasPendingCart = loadPendingCart();
+    
+    return hasPendingCart;
+  };
+
   const value = {
     cartItems: state.cartItems,
     addToCart,
@@ -163,7 +318,12 @@ export function CartProvider({ children }) {
     getCartTotal,
     getCartItemsCount,
     isInCart,
-    getItemQuantity
+    getItemQuantity,
+    loadPendingCart,
+    loadCartFromDB,
+    syncCartWithDB,
+    saveCartToDB,
+    combineCartWithGuest
   };
 
   return (

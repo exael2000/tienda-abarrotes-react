@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { formatPrice } from '../utils/currency';
 import './Cart.css';
 import './ProductList.css'; // Importar estilos del ProductList para el bottom sheet
@@ -149,8 +150,11 @@ const ProductBottomSheet = ({ product, isOpen, onClose }) => {
 
 function Cart() {
   const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useContext(CartContext);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
 
   const handleProductClick = (product) => {
     setSelectedProduct(product);
@@ -160,6 +164,42 @@ function Cart() {
   const closeProductModal = () => {
     setIsModalOpen(false);
     setSelectedProduct(null);
+  };
+
+  const handleCheckout = () => {
+    if (user?.isGuest) {
+      // Mostrar modal para registrarse
+      setShowRegisterPrompt(true);
+      return;
+    }
+    // Aquí iría la lógica normal de checkout para usuarios registrados
+    alert('Procesando pago...');
+  };
+
+  const handleGoToRegister = () => {
+    // Cerrar modal
+    setShowRegisterPrompt(false);
+    // Guardar el carrito actual para recuperarlo después del registro
+    localStorage.setItem('pendingCart', JSON.stringify(cartItems));
+    // Marcar que quiere ir al registro
+    localStorage.setItem('wantsToRegister', 'true');
+    // Hacer logout para que regrese a la pantalla de auth
+    logout();
+    // Redirigir a la página principal
+    navigate('/');
+  };
+
+  const handleGoToLogin = () => {
+    // Cerrar modal
+    setShowRegisterPrompt(false);
+    // Guardar el carrito actual para recuperarlo después del login
+    localStorage.setItem('pendingCart', JSON.stringify(cartItems));
+    // Marcar que quiere ir al login
+    localStorage.setItem('wantsToRegister', 'false');
+    // Hacer logout para que regrese a la pantalla de auth (login por defecto)
+    logout();
+    // Redirigir a la página principal
+    navigate('/');
   };
 
   if (cartItems.length === 0) {
@@ -269,8 +309,11 @@ function Cart() {
               <span>{formatPrice(getCartTotal())}</span>
             </div>
             
-            <button className="btn-checkout">
-              Proceder al Pago
+            <button 
+              className={`btn-checkout ${user?.isGuest ? 'guest-disabled' : ''}`}
+              onClick={handleCheckout}
+            >
+              {user?.isGuest ? '🔒 Regístrate para Comprar' : 'Proceder al Pago'}
             </button>
             
             <Link to="/" className="btn-continue-shopping-small">
@@ -285,6 +328,54 @@ function Cart() {
         isOpen={isModalOpen}
         onClose={closeProductModal}
       />
+
+      {/* Modal para prompt de registro */}
+      {showRegisterPrompt && (
+        <div className="register-prompt-overlay" onClick={() => setShowRegisterPrompt(false)}>
+          <div className="register-prompt-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="register-prompt-header">
+              <h3>🛒 ¡Tu carrito está listo!</h3>
+              <button 
+                className="register-prompt-close" 
+                onClick={() => setShowRegisterPrompt(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="register-prompt-content">
+              <p>Para finalizar tu compra y recibir tu pedido, necesitas tener una cuenta.</p>
+              <div className="register-prompt-benefits">
+                <div className="benefit-item">
+                  <span className="benefit-icon">✅</span>
+                  <span>Guarda tu información para futuras compras</span>
+                </div>
+                <div className="benefit-item">
+                  <span className="benefit-icon">📦</span>
+                  <span>Rastrea el estado de tus pedidos</span>
+                </div>
+                <div className="benefit-item">
+                  <span className="benefit-icon">🎁</span>
+                  <span>Accede a ofertas exclusivas</span>
+                </div>
+              </div>
+            </div>
+            <div className="register-prompt-actions">
+              <button 
+                className="btn-register-now"
+                onClick={handleGoToRegister}
+              >
+                Registrarme Ahora
+              </button>
+              <button 
+                className="btn-login-now"
+                onClick={handleGoToLogin}
+              >
+                Ya tengo cuenta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
