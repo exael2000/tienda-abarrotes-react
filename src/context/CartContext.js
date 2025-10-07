@@ -1,4 +1,4 @@
-import React, { createContext, useReducer, useEffect, useCallback } from 'react';
+import React, { createContext, useReducer, useEffect } from 'react';
 
 // Actions
 const CART_ACTIONS = {
@@ -103,90 +103,90 @@ export function CartProvider({ children }) {
   }, [state.cartItems]);
 
   // Funciones del carrito
-  const addToCart = async (product, quantity = 1) => {
+  const addToCart = (product, quantity = 1) => {
     if (product.stock <= 0) {
       alert('Producto sin stock disponible');
       return;
     }
     
+    // Actualizar estado inmediatamente
     dispatch({
       type: CART_ACTIONS.ADD_TO_CART,
       payload: { ...product, quantity }
     });
 
-    // Sincronizar con BD si está autenticado y no es invitado
+    // Sincronizar con BD si está autenticado y no es invitado (de forma asíncrona sin esperar)
     const token = localStorage.getItem('access_token');
     const isGuest = localStorage.getItem('isGuest') === 'true';
     
     if (token && !isGuest) {
-      try {
-        await fetch('/api/cart/add', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ 
-            product_id: product.id, 
-            quantity: quantity 
-          })
-        });
-      } catch (error) {
+      // Ejecutar la sincronización sin esperar (fire and forget)
+      fetch('/api/cart/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          product_id: product.id, 
+          quantity: quantity 
+        })
+      }).catch(error => {
         console.error('Error syncing add to cart with DB:', error);
-      }
+      });
     }
   };
 
-  const removeFromCart = async (productId) => {
+  const removeFromCart = (productId) => {
+    // Actualizar estado inmediatamente
     dispatch({
       type: CART_ACTIONS.REMOVE_FROM_CART,
       payload: productId
     });
 
-    // Sincronizar con BD si está autenticado y no es invitado
+    // Sincronizar con BD si está autenticado y no es invitado (de forma asíncrona sin esperar)
     const token = localStorage.getItem('access_token');
     const isGuest = localStorage.getItem('isGuest') === 'true';
     
     if (token && !isGuest) {
-      try {
-        await fetch(`/api/cart/remove?product_id=${productId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-      } catch (error) {
+      // Ejecutar la sincronización sin esperar (fire and forget)
+      fetch(`/api/cart/remove?product_id=${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }).catch(error => {
         console.error('Error syncing remove from cart with DB:', error);
-      }
+      });
     }
   };
 
-  const updateQuantity = async (productId, newQuantity) => {
+  const updateQuantity = (productId, newQuantity) => {
+    // Actualizar estado inmediatamente
     dispatch({
       type: CART_ACTIONS.UPDATE_QUANTITY,
       payload: { id: productId, quantity: newQuantity }
     });
 
-    // Sincronizar con BD si está autenticado y no es invitado
+    // Sincronizar con BD si está autenticado y no es invitado (de forma asíncrona sin esperar)
     const token = localStorage.getItem('access_token');
     const isGuest = localStorage.getItem('isGuest') === 'true';
     
     if (token && !isGuest) {
-      try {
-        await fetch('/api/cart/update', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ 
-            product_id: productId, 
-            quantity: newQuantity 
-          })
-        });
-      } catch (error) {
+      // Ejecutar la sincronización sin esperar (fire and forget)
+      fetch('/api/cart/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          product_id: productId, 
+          quantity: newQuantity 
+        })
+      }).catch(error => {
         console.error('Error syncing update quantity with DB:', error);
-      }
+      });
     }
   };
 

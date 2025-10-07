@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { getProducts } from '../services/api';
@@ -218,6 +218,8 @@ const ProductBottomSheet = ({ product, isOpen, onClose, onAddToCart }) => {
   const [selectedQuantity, setSelectedQuantity] = useState(1);
   const [isImageZoomed, setIsImageZoomed] = useState(false);
 
+  console.log('🔄 ProductBottomSheet render:', { isOpen, expanded: isExpanded, product: product?.name });
+
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
@@ -399,7 +401,10 @@ const ProductBottomSheet = ({ product, isOpen, onClose, onAddToCart }) => {
                 className="btn-add-expanded"
                 onClick={() => {
                   onAddToCart(product, selectedQuantity);
-                  onClose();
+                  // Usar setTimeout para cerrar después de que se complete el proceso
+                  setTimeout(() => {
+                    onClose();
+                  }, 100);
                 }}
               >
                 Agregar {selectedQuantity} al carrito
@@ -506,7 +511,8 @@ function ProductList() {
     setSelectedProduct(null);
   };
 
-  const handleAddToCart = (product, quantity) => {
+  const handleAddToCart = useCallback((product, quantity) => {
+    console.log('🛒 handleAddToCart iniciado:', { product: product.name, quantity });
     addToCart(product, quantity);
     
     // Mostrar notificación
@@ -517,7 +523,8 @@ function ProductList() {
     });
     
     console.log(`✓ Agregado al carrito: ${quantity}x ${product.name}`);
-  };
+    console.log('🛒 handleAddToCart completado');
+  }, [addToCart]);
   
   const handleCloseNotification = () => {
     setNotification({
