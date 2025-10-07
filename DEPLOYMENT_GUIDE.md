@@ -56,18 +56,39 @@ python3 -c "import flask_cors, flask_jwt_extended, bcrypt; print('Dependencias i
 # Entrar al directorio del microservicio
 cd db-microservice
 
-# Inicializar la base de datos
-python3 init_db.py
+# Inicializar la base de datos completa (productos, usuarios, carritos, sesiones)
+python3 init_complete_db.py
 
-# Crear usuarios de prueba
-python3 init_users.py
-
-# Verificar que se creó la base de datos
+# Verificar que se creó la base de datos con todas las tablas
 ls -la *.sqlite3
+
+# Verificar contenido de la base de datos
+python3 -c "
+import sqlite3
+conn = sqlite3.connect('db.sqlite3')
+cursor = conn.cursor()
+cursor.execute('SELECT name FROM sqlite_master WHERE type=\"table\";')
+tables = [row[0] for row in cursor.fetchall()]
+print('Tablas creadas:', tables)
+
+cursor.execute('SELECT COUNT(*) FROM productos')
+print('Productos:', cursor.fetchone()[0])
+
+cursor.execute('SELECT COUNT(*) FROM users')
+print('Usuarios:', cursor.fetchone()[0])
+
+conn.close()
+"
 
 # Volver al directorio raíz
 cd ..
 ```
+
+> 🎯 **init_complete_db.py** crea automáticamente:
+> - **productos**: 34 productos de ejemplo organizados por proveedor (Bimbo: 7, Gamesa: 7, Sabritas: 7, La Costeña: 7, Barcel: 6)
+> - **users**: Usuario de prueba (exael/exael) con password hasheado
+> - **user_sessions**: Tabla para manejo de tokens JWT
+> - **cart_items**: Tabla para persistencia del carrito de compras
 
 ## 🌐 Paso 4: Configurar Node.js y Build
 
@@ -245,9 +266,21 @@ npm run build
 ### Actualizar Base de Datos
 ```bash
 cd ~/tienda-abarrotes-react/db-microservice
-python3 init_db.py
-python3 init_users.py
+python3 init_complete_db.py
 ```
+
+### Script Automático de Deployment
+```bash
+# Ejecutar deployment completo (recomendado)
+cd ~/tienda-abarrotes-react
+bash deploy.sh
+```
+
+> 🚀 **deploy.sh** automatiza todo el proceso:
+> - `git pull origin main`
+> - `npm run build` 
+> - Copia `app_pythonanywhere.py` como `app.py`
+> - Ejecuta `init_complete_db.py`
 
 ## ✅ Checklist Final
 

@@ -11,15 +11,17 @@ git pull origin main
 echo "🔨 Creando build de producción..."
 npm run build
 
-# Paso 3: Reemplazar app.py con la versión completa
+# Paso 3: Reemplazar app.py con la versión de PythonAnywhere
 echo "🔄 Actualizando aplicación..."
-cp db-microservice/app_full.py db-microservice/app.py
+cp app_pythonanywhere.py db-microservice/app.py
 
-# Paso 4: Asegurar que la base de datos esté actualizada
-echo "🗄️ Verificando base de datos..."
+# Paso 4: Inicializar base de datos completa
+echo "🗄️ Inicializando base de datos completa..."
 cd db-microservice
-python3.10 update_products.py
+python3.10 init_complete_db.py
 
 echo "✅ Deploy completado!"
 echo "🌐 Tu aplicación está disponible en: https://exael.pythonanywhere.com"
 echo "📊 API: https://exael.pythonanywhere.com/api/products"
+echo "� Base de datos: 34 productos de 5 proveedores"
+echo "�👤 Usuario de prueba: exael / exael"
