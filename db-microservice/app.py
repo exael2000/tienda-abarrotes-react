@@ -233,17 +233,21 @@ def get_cart():
     """Obtener carrito del usuario autenticado"""
     user_id = int(get_jwt_identity())
     
+    print(f"🛒 Loading cart for user {user_id}")
+    
     conn = get_db_connection()
     cart_items = conn.execute('''
-        SELECT c.product_id, c.quantity, c.updated_at,
+        SELECT c.product_id, c.quantity, c.order_position, c.updated_at,
                p.name, p.description, p.price_cents, p.image, 
                p.brand, p.weight, p.stock
         FROM cart_items c
         JOIN productos p ON c.product_id = p.id
         WHERE c.user_id = ?
-        ORDER BY c.updated_at DESC
+        ORDER BY c.order_position ASC, c.created_at ASC
     ''', (user_id,)).fetchall()
     conn.close()
+    
+    print(f"🛒 Found {len(cart_items)} items in cart for user {user_id}")
     
     # Convertir a formato compatible con el frontend
     cart_data = []
@@ -257,9 +261,12 @@ def get_cart():
             'brand': item['brand'],
             'weight': item['weight'],
             'stock': item['stock'],
-            'quantity': item['quantity']
+            'quantity': item['quantity'],
+            'order': item['order_position'] or 0,
+            'addedAt': item['updated_at']
         })
     
+    print(f"🛒 Returning cart data: {[item['name'] for item in cart_data]}")
     return jsonify(cart_data)
 
 @app.route('/api/cart/add', methods=['POST'])
@@ -294,12 +301,26 @@ def add_to_cart():
         return jsonify({'error': 'Stock insuficiente'}), 400
     
     # Insertar o actualizar item en carrito
-    conn.execute('''
-        INSERT INTO cart_items (user_id, product_id, quantity, updated_at)
-        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-        ON CONFLICT(user_id, product_id) 
-        DO UPDATE SET quantity = quantity + excluded.quantity, updated_at = CURRENT_TIMESTAMP
-    ''', (user_id, product_id, quantity))
+    if existing_item:
+        # Si ya existe, solo actualizar cantidad
+        conn.execute('''
+            UPDATE cart_items 
+            SET quantity = quantity + ?, updated_at = CURRENT_TIMESTAMP 
+            WHERE user_id = ? AND product_id = ?
+        ''', (quantity, user_id, product_id))
+    else:
+        # Si es nuevo, obtener el próximo order_position
+        max_order = conn.execute('''
+            SELECT COALESCE(MAX(order_position), 0) + 1 as next_order
+            FROM cart_items WHERE user_id = ?
+        ''', (user_id,)).fetchone()
+        
+        next_order = max_order['next_order'] if max_order else 1
+        
+        conn.execute('''
+            INSERT INTO cart_items (user_id, product_id, quantity, order_position, updated_at)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ''', (user_id, product_id, quantity, next_order))
     
     conn.commit()
     conn.close()
@@ -355,13 +376,27 @@ def remove_from_cart():
     user_id = int(get_jwt_identity())
     product_id = request.args.get('product_id')
     
+    print(f"🗑️ Backend: Removing product {product_id} for user {user_id}")
+    
     if not product_id:
         return jsonify({'error': 'product_id es requerido'}), 400
     
     conn = get_db_connection()
-    conn.execute('DELETE FROM cart_items WHERE user_id = ? AND product_id = ?', 
-                (user_id, product_id))
-    conn.commit()
+    
+    # Verificar si el item existe antes de eliminarlo
+    cursor = conn.execute('SELECT * FROM cart_items WHERE user_id = ? AND product_id = ?', 
+                         (user_id, product_id))
+    existing_item = cursor.fetchone()
+    
+    if existing_item:
+        print(f"🗑️ Backend: Found item to remove: {dict(existing_item)}")
+        conn.execute('DELETE FROM cart_items WHERE user_id = ? AND product_id = ?', 
+                    (user_id, product_id))
+        conn.commit()
+        print(f"🗑️ Backend: Successfully removed product {product_id}")
+    else:
+        print(f"⚠️ Backend: Product {product_id} not found in cart for user {user_id}")
+    
     conn.close()
     
     return jsonify({'message': 'Producto eliminado del carrito'}), 200
@@ -379,37 +414,49 @@ def sync_cart():
     
     # Obtener carrito actual de la BD
     db_cart = conn.execute('''
-        SELECT product_id, quantity 
+        SELECT product_id, quantity, order_position 
         FROM cart_items 
         WHERE user_id = ?
     ''', (user_id,)).fetchall()
     
     # Crear diccionario para fácil acceso
-    db_cart_dict = {item['product_id']: item['quantity'] for item in db_cart}
+    db_cart_dict = {item['product_id']: {
+        'quantity': item['quantity'], 
+        'order': item['order_position']
+    } for item in db_cart}
+    
+    # Obtener el máximo order_position actual
+    max_order = conn.execute('''
+        SELECT COALESCE(MAX(order_position), 0) as max_order
+        FROM cart_items WHERE user_id = ?
+    ''', (user_id,)).fetchone()['max_order']
     
     # Procesar items del carrito local
-    for item in local_cart:
+    for index, item in enumerate(local_cart):
         product_id = item.get('id')
         quantity = item.get('quantity', 0)
+        item_order = item.get('order', max_order + index + 1)
+        
+        print(f"🔄 Syncing item {product_id}: quantity={quantity}, order={item_order}")
         
         if product_id and quantity > 0:
             # Verificar stock
             product = conn.execute('SELECT stock FROM productos WHERE id = ?', (product_id,)).fetchone()
             if product and quantity <= product['stock']:
                 if product_id in db_cart_dict:
-                    # Combinar cantidades (local + BD)
-                    new_quantity = min(db_cart_dict[product_id] + quantity, product['stock'])
+                    # Actualizar item existente (mantener cantidad total, actualizar orden si es necesario)
+                    current_order = db_cart_dict[product_id]['order'] or item_order
                     conn.execute('''
                         UPDATE cart_items 
-                        SET quantity = ?, updated_at = CURRENT_TIMESTAMP 
+                        SET quantity = ?, order_position = ?, updated_at = CURRENT_TIMESTAMP 
                         WHERE user_id = ? AND product_id = ?
-                    ''', (new_quantity, user_id, product_id))
+                    ''', (quantity, current_order, user_id, product_id))
                 else:
-                    # Agregar nuevo item
+                    # Agregar nuevo item con orden
                     conn.execute('''
-                        INSERT INTO cart_items (user_id, product_id, quantity, updated_at)
-                        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                    ''', (user_id, product_id, quantity))
+                        INSERT INTO cart_items (user_id, product_id, quantity, order_position, updated_at)
+                        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ''', (user_id, product_id, quantity, item_order))
     
     conn.commit()
     conn.close()

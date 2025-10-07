@@ -63,12 +63,17 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (userData, accessToken) => {
+    console.log('🔑 Login function called with:', { userData, accessToken: accessToken ? accessToken.substring(0, 20) + '...' : 'null' });
+    
     setUser(userData);
     setToken(accessToken);
     setIsAuthenticated(true);
     localStorage.setItem('access_token', accessToken);
     localStorage.setItem('user', JSON.stringify(userData));
     localStorage.removeItem('isGuest'); // Asegurar que no esté marcado como invitado
+    
+    console.log('🔑 Token saved to localStorage:', localStorage.getItem('access_token') ? 'YES' : 'NO');
+    console.log('🔑 User saved to localStorage:', localStorage.getItem('user') ? 'YES' : 'NO');
   };
 
   const loginAsGuest = (guestUser) => {
@@ -101,6 +106,15 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
       localStorage.removeItem('isGuest');
+      
+      // Limpiar flags del carrito para permitir carga fresca en próximo login
+      localStorage.removeItem('cartCombinationDone');
+      localStorage.removeItem('userCartLoaded');
+      
+      // NO eliminar pendingCart aquí - puede ser necesario para combinación de carritos
+      // localStorage.removeItem('pendingCart'); // Se elimina después de la combinación
+      
+      console.log('🔑 Logout completed - cart flags cleared (except pendingCart)');
     }
   };
 

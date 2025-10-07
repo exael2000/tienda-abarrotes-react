@@ -9,7 +9,30 @@ import Register from './components/Register';
 import Navbar from './components/Navbar';
 import './App.css';
 
-// Componente para manejar redirección automática al hacer logout
+// Componente para redirección única después del login
+const PostLoginRedirect = () => {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const hasRedirected = React.useRef(false);
+
+  useEffect(() => {
+    // Solo redirigir una vez cuando se autentica
+    if (isAuthenticated && !hasRedirected.current) {
+      console.log('🔄 User just logged in, redirecting to product list...');
+      hasRedirected.current = true;
+      navigate('/', { replace: true });
+    }
+    
+    // Reset cuando se desautentica
+    if (!isAuthenticated) {
+      hasRedirected.current = false;
+    }
+  }, [isAuthenticated, navigate]);
+
+  return null;
+};
+
+// Componente para manejar el logout y navegación
 const LogoutNavigationHandler = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -31,18 +54,54 @@ const PendingCartLoader = () => {
   const { combineCartWithGuest, loadCartFromDB } = useContext(CartContext);
   
   useEffect(() => {
-    // Solo cargar si está autenticado y no es invitado
     if (isAuthenticated && user && !localStorage.getItem('isGuest')) {
-      if (combineCartWithGuest) {
-        combineCartWithGuest();
-      } else if (loadCartFromDB) {
-        // Fallback: solo cargar desde BD si no hay función de combinación
-        loadCartFromDB();
+      const hasPendingCart = localStorage.getItem('pendingCart');
+      const hasRunCombination = localStorage.getItem('cartCombinationDone');
+      const hasLoadedUserCart = localStorage.getItem('userCartLoaded');
+      
+      console.log('🔑 User authenticated:', { 
+        user: user.username, 
+        hasPendingCart: !!hasPendingCart, 
+        hasRunCombination,
+        hasLoadedUserCart 
+      });
+      
+      if (hasPendingCart && !hasRunCombination) {
+        // Caso: Usuario invitado que ahora se loguea -> combinar carritos
+        console.log('🔑 Found pending cart, combining with user cart...');
+        
+        if (combineCartWithGuest) {
+          combineCartWithGuest().then(hadPendingCart => {
+            console.log('🔑 Cart combination result:', hadPendingCart);
+            localStorage.setItem('cartCombinationDone', 'true');
+            localStorage.setItem('userCartLoaded', 'true');
+          });
+        }
+      } else if (!hasLoadedUserCart) {
+        // Caso: Login normal O primera carga después de combinación -> cargar carrito del usuario
+        console.log('🔑 Loading user cart from DB (first time this session)...');
+        
+        if (loadCartFromDB) {
+          loadCartFromDB().then((loaded) => {
+            console.log('🔑 User cart loaded from DB:', loaded);
+            localStorage.setItem('userCartLoaded', 'true');
+            if (!hasRunCombination) {
+              localStorage.setItem('cartCombinationDone', 'true');
+            }
+          });
+        }
+      } else {
+        console.log('🔑 Cart already loaded for this session, skipping...');
+        console.log('🔑 This means userCartLoaded is:', hasLoadedUserCart);
       }
+    } else if (!isAuthenticated) {
+      console.log('🔑 User not authenticated, clearing localStorage flags');
+      localStorage.removeItem('cartCombinationDone');
+      localStorage.removeItem('userCartLoaded');
     }
   }, [isAuthenticated, user, combineCartWithGuest, loadCartFromDB]);
   
-  return null; // Este componente no renderiza nada
+  return null;
 };
 
 // Componente de loading
@@ -60,15 +119,22 @@ const AppContent = () => {
 
   // Verificar si el usuario viene del carrito y quiere registrarse
   useEffect(() => {
-    const wantsToRegister = localStorage.getItem('wantsToRegister');
-    if (wantsToRegister === 'true') {
-      setShowRegister(true);
-      localStorage.removeItem('wantsToRegister'); // Limpiar después de usar
-    } else if (wantsToRegister === 'false') {
-      setShowRegister(false);
-      localStorage.removeItem('wantsToRegister'); // Limpiar después de usar
+    // Solo ejecutar cuando NO esté autenticado (para evitar ejecutar cuando ya está logueado)
+    if (!isAuthenticated) {
+      const wantsToRegister = localStorage.getItem('wantsToRegister');
+      console.log('🔑 Checking wantsToRegister flag:', wantsToRegister);
+      
+      if (wantsToRegister === 'true') {
+        console.log('🔑 User wants to register - showing register form');
+        setShowRegister(true);
+        localStorage.removeItem('wantsToRegister'); // Limpiar después de usar
+      } else if (wantsToRegister === 'false') {
+        console.log('🔑 User wants to login - showing login form');
+        setShowRegister(false);
+        localStorage.removeItem('wantsToRegister'); // Limpiar después de usar
+      }
     }
-  }, []);
+  }, [isAuthenticated]); // Ejecutar cada vez que cambie isAuthenticated
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -99,6 +165,7 @@ const AppContent = () => {
     <CartProvider>
       <PendingCartLoader />
       <Router>
+        <PostLoginRedirect />
         <LogoutNavigationHandler />
         <div className="App">
           <Navbar />

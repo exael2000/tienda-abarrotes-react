@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { getProducts } from '../services/api';
@@ -218,7 +218,14 @@ const ProductBottomSheet = ({ product, isOpen, onClose, onAddToCart }) => {
   const [selectedQuantity, setSelectedQuantity] = useState(1);
   const [isImageZoomed, setIsImageZoomed] = useState(false);
 
-  console.log('🔄 ProductBottomSheet render:', { isOpen, expanded: isExpanded, product: product?.name });
+  console.log('🔄 ProductBottomSheet render:', { 
+    isOpen, 
+    expanded: isExpanded, 
+    product: product?.name,
+    onCloseFn: typeof onClose,
+    onAddToCartFn: typeof onAddToCart,
+    timestamp: Date.now()
+  });
 
   useEffect(() => {
     const handleEscape = (e) => {
@@ -457,6 +464,17 @@ const ProductBottomSheet = ({ product, isOpen, onClose, onAddToCart }) => {
   );
 };
 
+// Memoizar el componente para evitar re-renders innecesarios
+const ProductBottomSheetMemo = memo(ProductBottomSheet, (prevProps, nextProps) => {
+  // Solo re-renderizar si alguna de estas props realmente cambió
+  return (
+    prevProps.isOpen === nextProps.isOpen &&
+    prevProps.product?.id === nextProps.product?.id &&
+    prevProps.onClose === nextProps.onClose &&
+    prevProps.onAddToCart === nextProps.onAddToCart
+  );
+});
+
 function ProductList() {
   const { addToCart, getCartItemsCount } = useContext(CartContext);
   const [products, setProducts] = useState([]);
@@ -501,15 +519,15 @@ function ProductList() {
       });
   }, []);
 
-  const openProductModal = (product) => {
+  const openProductModal = useCallback((product) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const closeProductModal = () => {
+  const closeProductModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedProduct(null);
-  };
+  }, []);
 
   const handleAddToCart = useCallback((product, quantity) => {
     console.log('🛒 handleAddToCart iniciado:', { product: product.name, quantity });
@@ -587,7 +605,7 @@ function ProductList() {
         ))}
       </div>
 
-      <ProductBottomSheet 
+      <ProductBottomSheetMemo 
         product={selectedProduct}
         isOpen={isModalOpen}
         onClose={closeProductModal}

@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useCallback, memo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -148,6 +148,15 @@ const ProductBottomSheet = ({ product, isOpen, onClose }) => {
   );
 };
 
+// Memoizar el componente para evitar re-renders innecesarios
+const ProductBottomSheetMemo = memo(ProductBottomSheet, (prevProps, nextProps) => {
+  return (
+    prevProps.isOpen === nextProps.isOpen &&
+    prevProps.product?.id === nextProps.product?.id &&
+    prevProps.onClose === nextProps.onClose
+  );
+});
+
 function Cart() {
   const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useContext(CartContext);
   const { user, logout } = useAuth();
@@ -156,17 +165,28 @@ function Cart() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
 
-  const handleProductClick = (product) => {
+  // Ordenar items del carrito para asegurar consistencia visual
+  const sortedCartItems = [...cartItems].sort((a, b) => {
+    if (a.order && b.order) {
+      return a.order - b.order;
+    }
+    if (a.addedAt && b.addedAt) {
+      return a.addedAt - b.addedAt;
+    }
+    return a.id - b.id;
+  });
+
+  const handleProductClick = useCallback((product) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const closeProductModal = () => {
+  const closeProductModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedProduct(null);
-  };
+  }, []);
 
-  const handleCheckout = () => {
+  const handleCheckout = useCallback(() => {
     if (user?.isGuest) {
       // Mostrar modal para registrarse
       setShowRegisterPrompt(true);
@@ -174,35 +194,53 @@ function Cart() {
     }
     // Aquí iría la lógica normal de checkout para usuarios registrados
     alert('Procesando pago...');
-  };
+  }, [user?.isGuest]);
 
-  const handleGoToRegister = () => {
+  const handleGoToRegister = useCallback(() => {
+    console.log('🔑 handleGoToRegister called - saving cart for later combination');
+    console.log('🔑 Current cart items:', cartItems.length, cartItems);
+    
     // Cerrar modal
     setShowRegisterPrompt(false);
     // Guardar el carrito actual para recuperarlo después del registro
     localStorage.setItem('pendingCart', JSON.stringify(cartItems));
+    console.log('🔑 Saved pendingCart to localStorage');
+    
     // Marcar que quiere ir al registro
     localStorage.setItem('wantsToRegister', 'true');
+    console.log('🔑 Set wantsToRegister=true, going to logout and redirect to register');
+    
+    // Verificar que se guardó correctamente
+    const saved = localStorage.getItem('wantsToRegister');
+    console.log('🔑 Verification - wantsToRegister saved as:', saved);
+    
     // Hacer logout para que regrese a la pantalla de auth
     logout();
     // Redirigir a la página principal
     navigate('/');
-  };
+  }, [cartItems, logout, navigate]);
 
-  const handleGoToLogin = () => {
+  const handleGoToLogin = useCallback(() => {
+    console.log('🔑 handleGoToLogin called - saving cart for later combination');
+    console.log('🔑 Current cart items:', cartItems.length, cartItems);
+    
     // Cerrar modal
     setShowRegisterPrompt(false);
     // Guardar el carrito actual para recuperarlo después del login
     localStorage.setItem('pendingCart', JSON.stringify(cartItems));
+    console.log('🔑 Saved pendingCart to localStorage');
+    
     // Marcar que quiere ir al login
     localStorage.setItem('wantsToRegister', 'false');
+    console.log('🔑 Going to logout and redirect to login');
+    
     // Hacer logout para que regrese a la pantalla de auth (login por defecto)
     logout();
     // Redirigir a la página principal
     navigate('/');
-  };
+  }, [cartItems, logout, navigate]);
 
-  if (cartItems.length === 0) {
+  if (sortedCartItems.length === 0) {
     return (
       <div className="cart-container">
         <div className="cart-header">
@@ -230,12 +268,12 @@ function Cart() {
         <Link to="/" className="back-button">
           ← Volver a la tienda
         </Link>
-        <h1>Mi Carrito ({cartItems.length} productos)</h1>
+        <h1>Mi Carrito ({sortedCartItems.length} productos)</h1>
       </div>
 
       <div className="cart-content">
         <div className="cart-items">
-          {cartItems.map(item => (
+          {sortedCartItems.map(item => (
             <div key={item.id} className="cart-item">
               <div className="cart-item-image">
                 <img 
@@ -323,7 +361,7 @@ function Cart() {
         </div>
       </div>
       
-      <ProductBottomSheet 
+      <ProductBottomSheetMemo 
         product={selectedProduct}
         isOpen={isModalOpen}
         onClose={closeProductModal}

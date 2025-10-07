@@ -163,6 +163,7 @@ def init_complete_database():
                 user_id INTEGER NOT NULL,
                 product_id INTEGER NOT NULL,
                 quantity INTEGER NOT NULL DEFAULT 1,
+                order_position INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users (id),
@@ -170,6 +171,14 @@ def init_complete_database():
                 UNIQUE(user_id, product_id)
             )
         ''')
+        
+        # Agregar el campo order_position si no existe (para migración de DBs existentes)
+        try:
+            cursor.execute('ALTER TABLE cart_items ADD COLUMN order_position INTEGER DEFAULT 0')
+            print("✅ Campo order_position agregado a cart_items")
+        except Exception:
+            # El campo ya existe o hay otro error, continuamos
+            pass
         
         # Commit de todos los cambios
         conn.commit()
