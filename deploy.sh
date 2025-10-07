@@ -20,6 +20,11 @@ echo "🗄️ Inicializando base de datos completa..."
 cd db-microservice
 python3.10 init_complete_db.py
 
+# Paso 5: Copiar base de datos al directorio raíz (donde la lee app_pythonanywhere.py)
+echo "📋 Copiando base de datos al directorio principal..."
+cd ..
+cp db-microservice/db.sqlite3 db.sqlite3
+
 echo "✅ Deploy completado!"
 echo "🌐 Tu aplicación está disponible en: https://exael.pythonanywhere.com"
 echo "📊 API: https://exael.pythonanywhere.com/api/products"
