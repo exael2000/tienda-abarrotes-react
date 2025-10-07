@@ -1,7 +1,18 @@
 import axios from 'axios';
 
-// URLs de los servicios
-const API_URL = '/api';
+// URLs de los servicios - detectar si estamos en desarrollo o producción
+const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
+
+// Configurar URL específicamente para PythonAnywhere
+let API_URL;
+if (isDevelopment) {
+  API_URL = 'http://localhost:5001/api';
+} else if (window.location.hostname.includes('pythonanywhere.com')) {
+  // Para PythonAnywhere, usar la URL completa con HTTPS
+  API_URL = `https://${window.location.hostname}/api`;
+} else {
+  API_URL = '/api';
+}
 
 // Configuración de axios con timeout
 const api = axios.create({
@@ -10,6 +21,34 @@ const api = axios.create({
     'Content-Type': 'application/json',
   }
 });
+
+// Interceptor para agregar token de autenticación
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor para manejar respuestas de error de autenticación
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expirado o inválido
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user');
+      window.location.reload(); // Recargar para mostrar login
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Funciones para productos
 export const getProducts = (filters = {}) => {
