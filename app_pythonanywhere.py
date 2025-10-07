@@ -119,6 +119,41 @@ def register():
         conn.close()
         return jsonify({'error': 'Error al registrar usuario'}), 500
 
+@app.route('/api/products')
+def get_products():
+    conn = get_db_connection()
+    
+    # Obtener parámetros de filtrado opcionales
+    supplier = request.args.get('supplier')
+    brand = request.args.get('brand')
+    min_price = request.args.get('min_price')
+    max_price = request.args.get('max_price')
+    
+    query = 'SELECT * FROM productos WHERE 1=1'
+    params = []
+    
+    if supplier:
+        query += ' AND supplier = ?'
+        params.append(supplier)
+    
+    if brand:
+        query += ' AND brand = ?'
+        params.append(brand)
+    
+    if min_price:
+        query += ' AND price_cents >= ?'
+        params.append(int(min_price))
+    
+    if max_price:
+        query += ' AND price_cents <= ?'
+        params.append(int(max_price))
+    
+    query += ' ORDER BY name'
+    
+    products = conn.execute(query, params).fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in products])
+
 @app.route('/api/products/<int:product_id>')
 def get_product(product_id):
     conn = get_db_connection()
