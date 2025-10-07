@@ -12,7 +12,7 @@ import os
 def init_complete_database():
     """Inicializar la base de datos completa con todas las tablas y datos"""
     
-    # Usar ruta absoluta para la base de datos
+    # Crear base de datos en el directorio del microservicio
     db_path = os.path.join(os.path.dirname(__file__), 'db.sqlite3')
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -195,6 +195,15 @@ def init_complete_database():
         print("✅ Todas las tablas creadas: productos, users, user_sessions, cart_items")
         print("✅ Datos de ejemplo cargados")
         print("✅ Usuario de prueba disponible (exael/exael)")
+        
+        # Copiar también al directorio raíz del proyecto
+        try:
+            import shutil
+            root_db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'db.sqlite3')
+            shutil.copy2(db_path, root_db_path)
+            print("📋 Base de datos copiada al directorio raíz del proyecto")
+        except Exception as copy_error:
+            print(f"⚠️  No se pudo copiar al directorio raíz: {copy_error}")
         
     except Exception as e:
         print(f"❌ Error inicializando base de datos: {e}")
