@@ -210,11 +210,13 @@ const SupplierCarousel = ({ supplier, products, onProductClick, onAddToCart }) =
 };
 
 // Componente Bottom Sheet para detalles del producto
-const ProductBottomSheet = ({ product, isOpen, onClose }) => {
+const ProductBottomSheet = ({ product, isOpen, onClose, onAddToCart }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [dragStartY, setDragStartY] = useState(0);
   const [currentTranslateY, setCurrentTranslateY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [isImageZoomed, setIsImageZoomed] = useState(false);
 
   useEffect(() => {
     const handleEscape = (e) => {
@@ -229,6 +231,8 @@ const ProductBottomSheet = ({ product, isOpen, onClose }) => {
       // Reset estado cuando se abre
       setIsExpanded(false);
       setCurrentTranslateY(0);
+      setSelectedQuantity(1); // Reset cantidad a 1
+      setIsImageZoomed(false); // Reset zoom de imagen
     }
 
     return () => {
@@ -289,13 +293,9 @@ const ProductBottomSheet = ({ product, isOpen, onClose }) => {
 
   if (!isOpen || !product) return null;
 
-  const sheetStyle = {
-    transform: isDragging 
-      ? `translateY(${currentTranslateY}px)` 
-      : isExpanded 
-        ? 'translateY(0)' 
-        : 'translateY(40%)'
-  };
+  const sheetStyle = isDragging 
+    ? { transform: `translateY(${currentTranslateY}px)` }
+    : {};
 
   return (
     <div className="bottom-sheet-overlay" onClick={onClose}>
@@ -318,7 +318,8 @@ const ProductBottomSheet = ({ product, isOpen, onClose }) => {
             <img 
               src={`/images/products/${product.image}`}
               alt={product.name}
-              className="summary-image"
+              className="summary-image clickable-image"
+              onClick={() => setIsImageZoomed(true)}
               onError={(e) => {
                 e.target.src = '/images/products/placeholder.svg';
               }}
@@ -329,9 +330,6 @@ const ProductBottomSheet = ({ product, isOpen, onClose }) => {
               <span className="summary-price">{formatPrice(product.price_cents)}</span>
             </div>
           </div>
-          <button className="btn-quick-add">
-            {product.stock > 0 ? 'Agregar' : 'Sin Stock'}
-          </button>
         </div>
 
         {/* Vista expandida */}
@@ -375,6 +373,47 @@ const ProductBottomSheet = ({ product, isOpen, onClose }) => {
               </div>
             )}
           </div>
+          
+          {/* Selector de cantidad siempre visible */}
+          {product.stock > 0 && (
+            <div className="expanded-quantity-section">
+              <h4>Cantidad a agregar:</h4>
+              <div className="expanded-quantity-controls">
+                <button 
+                  className="qty-btn-expanded"
+                  onClick={() => setSelectedQuantity(Math.max(1, selectedQuantity - 1))}
+                  disabled={selectedQuantity <= 1}
+                >
+                  -
+                </button>
+                <span className="quantity-display-expanded">{selectedQuantity}</span>
+                <button 
+                  className="qty-btn-expanded"
+                  onClick={() => setSelectedQuantity(Math.min(product.stock, selectedQuantity + 1))}
+                  disabled={selectedQuantity >= product.stock}
+                >
+                  +
+                </button>
+              </div>
+              <button 
+                className="btn-add-expanded"
+                onClick={() => {
+                  onAddToCart(product, selectedQuantity);
+                  onClose();
+                }}
+              >
+                Agregar {selectedQuantity} al carrito
+              </button>
+            </div>
+          )}
+          
+          {product.stock === 0 && (
+            <div className="expanded-quantity-section">
+              <button className="btn-out-of-stock-expanded" disabled>
+                Sin Stock Disponible
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Indicador de estado */}
@@ -382,6 +421,33 @@ const ProductBottomSheet = ({ product, isOpen, onClose }) => {
           {isExpanded ? '↓ Desliza hacia abajo para contraer' : '↑ Desliza hacia arriba para ver más'}
         </div>
       </div>
+      
+      {/* Modal de imagen ampliada */}
+      {isImageZoomed && (
+        <div className="image-zoom-overlay" onClick={() => setIsImageZoomed(false)}>
+          <div className="image-zoom-container">
+            <img 
+              src={`/images/products/${product.image}`}
+              alt={product.name}
+              className="image-zoomed"
+              onClick={(e) => e.stopPropagation()}
+              onError={(e) => {
+                e.target.src = '/images/products/placeholder.svg';
+              }}
+            />
+            <button 
+              className="image-zoom-close"
+              onClick={() => setIsImageZoomed(false)}
+            >
+              ×
+            </button>
+            <div className="image-zoom-info">
+              <h3>{product.name}</h3>
+              <p>{product.brand} - {product.weight}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -518,6 +584,7 @@ function ProductList() {
         product={selectedProduct}
         isOpen={isModalOpen}
         onClose={closeProductModal}
+        onAddToCart={handleAddToCart}
       />
       
       <AddToCartNotification

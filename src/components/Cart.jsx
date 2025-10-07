@@ -8,6 +8,7 @@ import './ProductList.css'; // Importar estilos del ProductList para el bottom s
 // ProductBottomSheet optimizado para carrito con scroll
 const ProductBottomSheet = ({ product, isOpen, onClose }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isImageZoomed, setIsImageZoomed] = useState(false);
 
   React.useEffect(() => {
     const handleEscape = (e) => {
@@ -20,6 +21,7 @@ const ProductBottomSheet = ({ product, isOpen, onClose }) => {
       document.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden';
       setIsExpanded(false);
+      setIsImageZoomed(false); // Reset image zoom when opening bottom sheet
     }
 
     return () => {
@@ -42,7 +44,7 @@ const ProductBottomSheet = ({ product, isOpen, onClose }) => {
 
   return (
     <div className="cart-bottom-sheet-overlay" onClick={handleBackgroundClick}>
-      <div className={`cart-bottom-sheet ${isExpanded ? 'expanded' : ''}`}>
+      <div className={`cart-bottom-sheet ${isExpanded ? 'expanded' : 'collapsed'}`}>
         <div className="cart-sheet-header">
           <div className="cart-sheet-handle" onClick={toggleExpanded}></div>
           <button className="cart-sheet-close" onClick={onClose}>×</button>
@@ -54,7 +56,8 @@ const ProductBottomSheet = ({ product, isOpen, onClose }) => {
               <img 
                 src={`/images/products/${product.image}`}
                 alt={product.name}
-                className="cart-product-image"
+                className="cart-product-image clickable-image"
+                onClick={() => setIsImageZoomed(true)}
                 onError={(e) => {
                   e.target.src = '/images/products/placeholder.svg';
                 }}
@@ -113,6 +116,33 @@ const ProductBottomSheet = ({ product, isOpen, onClose }) => {
           </div>
         </div>
       </div>
+      
+      {/* Modal de imagen ampliada */}
+      {isImageZoomed && (
+        <div className="image-zoom-overlay" onClick={() => setIsImageZoomed(false)}>
+          <div className="image-zoom-container">
+            <img 
+              src={`/images/products/${product.image}`}
+              alt={product.name}
+              className="image-zoomed"
+              onClick={(e) => e.stopPropagation()}
+              onError={(e) => {
+                e.target.src = '/images/products/placeholder.svg';
+              }}
+            />
+            <button 
+              className="image-zoom-close"
+              onClick={() => setIsImageZoomed(false)}
+            >
+              ×
+            </button>
+            <div className="image-zoom-info">
+              <h3>{product.name}</h3>
+              <p>{product.brand} - {product.weight}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
