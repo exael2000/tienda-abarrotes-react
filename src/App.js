@@ -16,11 +16,14 @@ const PostLoginRedirect = () => {
   const hasRedirected = React.useRef(false);
 
   useEffect(() => {
-    // Solo redirigir una vez cuando se autentica
+    // Solo redirigir una vez cuando se autentica, pero con un pequeño delay
+    // para permitir que el carrito se cargue primero
     if (isAuthenticated && !hasRedirected.current) {
-      console.log('🔄 User just logged in, redirecting to product list...');
       hasRedirected.current = true;
-      navigate('/', { replace: true });
+      setTimeout(() => {
+        console.log('🔄 User just logged in, redirecting to product list...');
+        navigate('/', { replace: true });
+      }, 100); // Pequeño delay para evitar conflictos con carga de carrito
     }
     
     // Reset cuando se desautentica
