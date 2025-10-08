@@ -55,9 +55,10 @@ const LogoutNavigationHandler = () => {
 const PendingCartLoader = () => {
   const { user, isAuthenticated } = useAuth();
   const { combineCartWithGuest, loadCartFromDB } = useContext(CartContext);
+  const [cartOperationInProgress, setCartOperationInProgress] = useState(false);
   
   useEffect(() => {
-    if (isAuthenticated && user && !localStorage.getItem('isGuest')) {
+    if (isAuthenticated && user && !localStorage.getItem('isGuest') && !cartOperationInProgress) {
       const hasPendingCart = localStorage.getItem('pendingCart');
       const hasRunCombination = localStorage.getItem('cartCombinationDone');
       const hasLoadedUserCart = localStorage.getItem('userCartLoaded');
@@ -72,25 +73,31 @@ const PendingCartLoader = () => {
       if (hasPendingCart && !hasRunCombination) {
         // Caso: Usuario invitado que ahora se loguea -> combinar carritos
         console.log('🔑 Found pending cart, combining with user cart...');
+        setCartOperationInProgress(true);
         
         if (combineCartWithGuest) {
           combineCartWithGuest().then(hadPendingCart => {
             console.log('🔑 Cart combination result:', hadPendingCart);
             localStorage.setItem('cartCombinationDone', 'true');
             localStorage.setItem('userCartLoaded', 'true');
+            setCartOperationInProgress(false);
+          }).catch(() => {
+            setCartOperationInProgress(false);
           });
         }
-      } else if (!hasLoadedUserCart) {
-        // Caso: Login normal O primera carga después de combinación -> cargar carrito del usuario
+      } else if (!hasLoadedUserCart && !hasRunCombination) {
+        // Caso: Login normal -> cargar carrito del usuario
         console.log('🔑 Loading user cart from DB (first time this session)...');
+        setCartOperationInProgress(true);
         
         if (loadCartFromDB) {
           loadCartFromDB().then((loaded) => {
             console.log('🔑 User cart loaded from DB:', loaded);
             localStorage.setItem('userCartLoaded', 'true');
-            if (!hasRunCombination) {
-              localStorage.setItem('cartCombinationDone', 'true');
-            }
+            localStorage.setItem('cartCombinationDone', 'true');
+            setCartOperationInProgress(false);
+          }).catch(() => {
+            setCartOperationInProgress(false);
           });
         }
       } else {
@@ -101,8 +108,9 @@ const PendingCartLoader = () => {
       console.log('🔑 User not authenticated, clearing localStorage flags');
       localStorage.removeItem('cartCombinationDone');
       localStorage.removeItem('userCartLoaded');
+      setCartOperationInProgress(false);
     }
-  }, [isAuthenticated, user, combineCartWithGuest, loadCartFromDB]);
+  }, [isAuthenticated, user, combineCartWithGuest, loadCartFromDB, cartOperationInProgress]);
   
   return null;
 };
