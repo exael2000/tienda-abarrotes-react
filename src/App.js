@@ -51,14 +51,17 @@ const LogoutNavigationHandler = () => {
   return null;
 };
 
+// Variable global para evitar múltiples cargas
+let cartLoadInProgress = false;
+let cartAlreadyLoadedThisSession = false;
+
 // Componente para cargar el carrito pendiente después del login
 const PendingCartLoader = () => {
   const { user, isAuthenticated } = useAuth();
   const { combineCartWithGuest, loadCartFromDB } = useContext(CartContext);
-  const [cartOperationInProgress, setCartOperationInProgress] = useState(false);
   
   useEffect(() => {
-    if (isAuthenticated && user && !localStorage.getItem('isGuest') && !cartOperationInProgress) {
+    if (isAuthenticated && user && !localStorage.getItem('isGuest') && !cartLoadInProgress && !cartAlreadyLoadedThisSession) {
       const hasPendingCart = localStorage.getItem('pendingCart');
       const hasRunCombination = localStorage.getItem('cartCombinationDone');
       const hasLoadedUserCart = localStorage.getItem('userCartLoaded');
@@ -67,50 +70,56 @@ const PendingCartLoader = () => {
         user: user.username, 
         hasPendingCart: !!hasPendingCart, 
         hasRunCombination,
-        hasLoadedUserCart 
+        hasLoadedUserCart,
+        cartLoadInProgress,
+        cartAlreadyLoadedThisSession
       });
       
       if (hasPendingCart && !hasRunCombination) {
         // Caso: Usuario invitado que ahora se loguea -> combinar carritos
         console.log('🔑 Found pending cart, combining with user cart...');
-        setCartOperationInProgress(true);
+        cartLoadInProgress = true;
         
         if (combineCartWithGuest) {
           combineCartWithGuest().then(hadPendingCart => {
             console.log('🔑 Cart combination result:', hadPendingCart);
             localStorage.setItem('cartCombinationDone', 'true');
             localStorage.setItem('userCartLoaded', 'true');
-            setCartOperationInProgress(false);
+            cartLoadInProgress = false;
+            cartAlreadyLoadedThisSession = true;
           }).catch(() => {
-            setCartOperationInProgress(false);
+            cartLoadInProgress = false;
           });
         }
       } else if (!hasLoadedUserCart && !hasRunCombination) {
         // Caso: Login normal -> cargar carrito del usuario
         console.log('🔑 Loading user cart from DB (first time this session)...');
-        setCartOperationInProgress(true);
+        cartLoadInProgress = true;
         
         if (loadCartFromDB) {
           loadCartFromDB().then((loaded) => {
             console.log('🔑 User cart loaded from DB:', loaded);
             localStorage.setItem('userCartLoaded', 'true');
             localStorage.setItem('cartCombinationDone', 'true');
-            setCartOperationInProgress(false);
+            cartLoadInProgress = false;
+            cartAlreadyLoadedThisSession = true;
           }).catch(() => {
-            setCartOperationInProgress(false);
+            cartLoadInProgress = false;
           });
         }
       } else {
         console.log('🔑 Cart already loaded for this session, skipping...');
         console.log('🔑 This means userCartLoaded is:', hasLoadedUserCart);
+        cartAlreadyLoadedThisSession = true;
       }
     } else if (!isAuthenticated) {
-      console.log('🔑 User not authenticated, clearing localStorage flags');
+      console.log('🔑 User not authenticated, clearing localStorage flags and session variables');
       localStorage.removeItem('cartCombinationDone');
       localStorage.removeItem('userCartLoaded');
-      setCartOperationInProgress(false);
+      cartLoadInProgress = false;
+      cartAlreadyLoadedThisSession = false;
     }
-  }, [isAuthenticated, user, combineCartWithGuest, loadCartFromDB, cartOperationInProgress]);
+  }, [isAuthenticated, user, combineCartWithGuest, loadCartFromDB]);
   
   return null;
 };
