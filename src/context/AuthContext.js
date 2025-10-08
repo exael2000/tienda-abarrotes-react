@@ -83,6 +83,14 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('user', JSON.stringify(guestUser));
     localStorage.setItem('isGuest', 'true');
     localStorage.removeItem('access_token'); // Asegurar que no haya token
+    
+    // Limpiar carrito anterior y flags de sesión para invitados
+    localStorage.removeItem('cart');
+    localStorage.removeItem('cartCombinationDone');
+    localStorage.removeItem('userCartLoaded');
+    localStorage.removeItem('pendingCart');
+    
+    console.log('🔑 Guest login - cart and session flags cleared');
   };
 
   const logout = async () => {

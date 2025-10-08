@@ -116,14 +116,27 @@ export function CartProvider({ children }) {
 
   // Cargar carrito desde localStorage al inicializar
   useEffect(() => {
+    const isGuest = localStorage.getItem('isGuest') === 'true';
     const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
+    
+    console.log('🛒 CartContext initialization:', {
+      isGuest,
+      hasSavedCart: !!savedCart,
+      action: isGuest ? 'Starting with empty cart (guest)' : 'Loading from localStorage'
+    });
+    
+    if (!isGuest && savedCart) {
       try {
         const cartData = JSON.parse(savedCart);
         dispatch({ type: CART_ACTIONS.LOAD_CART, payload: cartData });
+        console.log('🛒 Cart loaded from localStorage:', cartData.length, 'items');
       } catch (error) {
         console.error('Error loading cart from localStorage:', error);
       }
+    } else if (isGuest) {
+      // Para invitados, siempre empezar con carrito vacío
+      dispatch({ type: CART_ACTIONS.CLEAR_CART });
+      console.log('🛒 Guest user - cart cleared and starting empty');
     }
   }, []);
 

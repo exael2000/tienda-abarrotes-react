@@ -112,6 +112,11 @@ const PendingCartLoader = () => {
         console.log('🔑 This means userCartLoaded is:', hasLoadedUserCart);
         cartAlreadyLoadedThisSession = true;
       }
+    } else if (isAuthenticated && user && localStorage.getItem('isGuest')) {
+      // Usuario invitado - resetear variables globales
+      console.log('🔑 Guest user authenticated - resetting global cart variables');
+      cartLoadInProgress = false;
+      cartAlreadyLoadedThisSession = false;
     } else if (!isAuthenticated) {
       console.log('🔑 User not authenticated, clearing localStorage flags and session variables');
       localStorage.removeItem('cartCombinationDone');
