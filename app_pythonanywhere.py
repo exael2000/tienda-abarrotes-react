@@ -12,6 +12,19 @@ from decimal import Decimal
 app = Flask(__name__, static_folder='build', static_url_path='')
 CORS(app, origins=["*"], allow_headers=["*"], methods=["*"])
 
+# Headers de seguridad HTTP
+@app.after_request
+def after_request(response):
+    """Añadir headers de seguridad a todas las respuestas"""
+    response.headers['Content-Type'] = 'application/json; charset=utf-8'
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    return response
+
 # Configuración JWT
 app.config['JWT_SECRET_KEY'] = 'tu-clave-secreta-super-segura'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
@@ -296,12 +309,91 @@ def calculate_cart_total(cart_items):
 
 # ENDPOINTS DE ÓRDENES Y PAGOS
 
+@app.route('/api/cart/clear', methods=['DELETE'])
+@jwt_required()
+def clear_cart():
+    """Limpiar todo el carrito del usuario"""
+    user_id = int(get_jwt_identity())
+    
+    print(f"🗑️ Backend: Clearing all cart items for user {user_id}")
+    
+    conn = get_db_connection()
+    
+    # Eliminar todos los items del carrito del usuario
+    cursor = conn.execute('DELETE FROM cart_items WHERE user_id = ?', (user_id,))
+    deleted_count = cursor.rowcount
+    conn.commit()
+    conn.close()
+    
+    print(f"🗑️ Backend: Cleared {deleted_count} items from cart for user {user_id}")
+    
+    return jsonify({'message': f'Carrito limpiado - {deleted_count} productos eliminados'}), 200
+
 @app.route('/api/stripe/config', methods=['GET'])
 def get_stripe_config():
     """Obtener clave pública de Stripe"""
     return jsonify({
         'publicKey': STRIPE_PUBLIC_KEY
     })
+
+@app.route('/api/stripe/create-checkout-session', methods=['POST'])
+def create_checkout_session():
+    """Crear sesión de Stripe Checkout"""
+    data = request.get_json()
+    
+    try:
+        # Extraer datos del pedido
+        items = data.get('items', [])
+        customer_info = {
+            'name': data.get('customer_name', ''),
+            'email': data.get('customer_email', ''),
+            'phone': data.get('customer_phone', ''),
+            'address': data.get('delivery_address', ''),
+            'notes': data.get('order_notes', '')
+        }
+        
+        # Preparar line_items para Stripe
+        line_items = []
+        for item in items:
+            line_items.append({
+                'price_data': {
+                    'currency': 'mxn',
+                    'product_data': {
+                        'name': item.get('name', ''),
+                        'images': [item.get('image_url', '')] if item.get('image_url') else [],
+                    },
+                    'unit_amount': int((item.get('unit_price', 0)) * 100),  # Convertir a centavos
+                },
+                'quantity': item.get('quantity', 1),
+            })
+        
+        # Crear sesión de Checkout
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=line_items,
+            mode='payment',
+            success_url='https://exael.pythonanywhere.com/checkout/success?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url='https://exael.pythonanywhere.com/checkout/cancel',
+            metadata={
+                'customer_name': customer_info['name'],
+                'customer_email': customer_info['email'],
+                'customer_phone': customer_info['phone'],
+                'delivery_address': customer_info['address'],
+                'order_notes': customer_info['notes']
+            }
+        )
+        
+        return jsonify({
+            'id': checkout_session.id,
+            'url': checkout_session.url
+        }), 200
+        
+    except stripe.error.StripeError as e:
+        print(f"Error de Stripe: {e}")
+        return jsonify({'error': f'Error de Stripe: {str(e)}'}), 400
+    except Exception as e:
+        print(f"Error al crear sesión de Checkout: {e}")
+        return jsonify({'error': 'Error al crear sesión de Checkout'}), 500
 
 @app.route('/api/orders/create-payment-intent', methods=['POST'])
 @jwt_required()
