@@ -152,6 +152,29 @@ def register():
         conn.close()
         return jsonify({'error': 'Error al registrar usuario'}), 500
 
+@app.route('/api/auth/profile', methods=['GET'])
+@jwt_required()
+def get_profile():
+    """Obtener perfil del usuario autenticado"""
+    user_id = int(get_jwt_identity())
+    
+    conn = get_db_connection()
+    user = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
+    conn.close()
+    
+    if not user:
+        return jsonify({'error': 'Usuario no encontrado'}), 404
+    
+    return jsonify(dict(user))
+
+@app.route('/api/auth/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    """Cerrar sesión (invalidar token)"""
+    # En una implementación completa, aquí invalidarías el token
+    # Por simplicidad, solo retornamos un mensaje
+    return jsonify({'message': 'Sesión cerrada exitosamente'})
+
 @app.route('/api/products')
 def get_products():
     conn = get_db_connection()
@@ -719,12 +742,12 @@ def create_payment_intent():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/orders', methods=['POST'])
-@jwt_required()
+@jwt_required(optional=True)
 def create_order():
     """Crear nueva orden"""
     try:
         data = request.get_json()
-        user_id = get_jwt_identity()
+        user_id = get_jwt_identity()  # Será None si no hay token
         
         # Validar datos requeridos
         required_fields = ['cart_items', 'payment_method', 'customer_name', 'customer_phone']
