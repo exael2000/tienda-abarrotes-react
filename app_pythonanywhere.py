@@ -326,6 +326,48 @@ def add_to_cart():
     
     return jsonify({'message': 'Producto agregado al carrito'}), 200
 
+@app.route('/api/cart/update', methods=['PUT'])
+@jwt_required()
+def update_cart_quantity():
+    """Actualizar cantidad de item en carrito"""
+    user_id = int(get_jwt_identity())
+    data = request.get_json()
+    
+    product_id = data.get('product_id')
+    quantity = data.get('quantity')
+    
+    if not product_id or quantity is None:
+        return jsonify({'error': 'product_id y quantity son requeridos'}), 400
+    
+    conn = get_db_connection()
+    
+    if quantity <= 0:
+        # Eliminar item del carrito
+        conn.execute('DELETE FROM cart_items WHERE user_id = ? AND product_id = ?', 
+                    (user_id, product_id))
+    else:
+        # Verificar stock
+        product = conn.execute('SELECT stock FROM productos WHERE id = ?', (product_id,)).fetchone()
+        if not product:
+            conn.close()
+            return jsonify({'error': 'Producto no encontrado'}), 404
+        
+        if quantity > product['stock']:
+            conn.close()
+            return jsonify({'error': 'Stock insuficiente'}), 400
+        
+        # Actualizar cantidad
+        conn.execute('''
+            UPDATE cart_items 
+            SET quantity = ?, updated_at = CURRENT_TIMESTAMP 
+            WHERE user_id = ? AND product_id = ?
+        ''', (quantity, user_id, product_id))
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'message': 'Carrito actualizado'}), 200
+
 @app.route('/api/cart/sync', methods=['POST'])
 @jwt_required()
 def sync_cart():
@@ -544,9 +586,9 @@ def verify_stripe_payment():
         cursor.execute('''
             INSERT INTO orders (
                 order_number, payment_method, payment_status, total_amount,
-                stripe_session_id, customer_name, customer_phone, customer_email,
-                delivery_address, order_notes, status, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                stripe_payment_intent_id, customer_name, customer_phone, customer_email,
+                delivery_address, order_notes, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ''', (
             order_number,
             'stripe',
@@ -557,8 +599,7 @@ def verify_stripe_payment():
             metadata.get('customer_phone', ''),
             metadata.get('customer_email', ''),
             metadata.get('delivery_address', ''),
-            metadata.get('order_notes', ''),
-            'confirmed'
+            metadata.get('order_notes', '')
         ))
         
         order_id = cursor.lastrowid
