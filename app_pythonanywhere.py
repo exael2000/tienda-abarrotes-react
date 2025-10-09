@@ -750,12 +750,12 @@ def create_order():
         user_id = get_jwt_identity()  # Será None si no hay token
         
         # Validar datos requeridos
-        required_fields = ['cart_items', 'payment_method', 'customer_name', 'customer_phone']
+        required_fields = ['items', 'payment_method', 'customer_name', 'customer_phone', 'total_amount']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'Campo requerido: {field}'}), 400
         
-        cart_items = data['cart_items']
+        cart_items = data['items']
         payment_method = data['payment_method']
         customer_name = data['customer_name']
         customer_phone = data['customer_phone']
@@ -767,8 +767,8 @@ def create_order():
         if not cart_items:
             return jsonify({'error': 'El carrito está vacío'}), 400
             
-        # Calcular total
-        total_amount = calculate_cart_total(cart_items)
+        # Usar el total que viene del frontend
+        total_amount = data['total_amount']
         order_number = generate_order_number()
         
         conn = get_db_connection()
@@ -798,8 +798,8 @@ def create_order():
                     order_id, product_id, quantity, unit_price, total_price
                 ) VALUES (?, ?, ?, ?, ?)
             ''', (
-                order_id, item['id'], item['quantity'], 
-                item['price'], item['price'] * item['quantity']
+                order_id, item['product_id'], item['quantity'], 
+                item['unit_price'], item['unit_price'] * item['quantity']
             ))
         
         # Limpiar carrito del usuario

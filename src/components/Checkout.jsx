@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { CartContext } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { formatPrice, pesosTocents } from '../utils/currency';
+import { createOrder } from '../services/api';
 import './Checkout_fixed.css';
 
 const PAYMENT_METHODS = {
@@ -182,7 +183,7 @@ function Checkout({ onSuccess, onCancel }) {
     }, 300);
   };
 
-  const createOrder = async () => {
+  const submitOrder = async () => {
     try {
       const orderData = {
         customer_name: formData.customerName,
@@ -201,24 +202,13 @@ function Checkout({ onSuccess, onCancel }) {
         }))
       };
 
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData)
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Error al crear la orden');
-      }
-
-      const result = await response.json();
-      return result;
+      const response = await createOrder(orderData);
+      return response.data;
     } catch (error) {
       console.error('Error creating order:', error);
-      throw error;
+      // Axios pone el mensaje del servidor en error.response.data
+      const errorMessage = error.response?.data?.error || error.message || 'Error al crear la orden';
+      throw new Error(errorMessage);
     }
   };
 
@@ -230,7 +220,7 @@ function Checkout({ onSuccess, onCancel }) {
     try {
       if (formData.paymentMethod === PAYMENT_METHODS.CASH) {
         // Para efectivo, crear orden directamente
-        const result = await createOrder();
+        const result = await submitOrder();
         console.log('✅ Orden creada para efectivo:', result.order_number);
         
         // Guardar datos del usuario para futuros pedidos

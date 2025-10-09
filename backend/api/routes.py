@@ -126,9 +126,14 @@ def create_order():
     data = request.get_json()
     
     try:
+        # Pasar headers de autorización si existen
+        headers = {'Content-Type': 'application/json'}
+        if 'Authorization' in request.headers:
+            headers['Authorization'] = request.headers['Authorization']
+        
         resp = requests.post(f"{DB_SERVICE_URL}/api/orders", 
                            json=data,
-                           headers={'Content-Type': 'application/json'})
+                           headers=headers)
         
         if resp.status_code == 201:
             return jsonify(resp.json()), 201

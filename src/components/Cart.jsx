@@ -189,14 +189,10 @@ function Cart() {
   }, []);
 
   const handleCheckout = useCallback(() => {
-    if (user?.isGuest) {
-      // Mostrar modal para registrarse
-      setShowRegisterPrompt(true);
-      return;
-    }
-    // Mostrar el componente de checkout
+    // Permitir checkout tanto para usuarios registrados como invitados
+    console.log('🛒 Iniciando checkout para usuario:', user?.isGuest ? 'invitado' : 'registrado');
     setShowCheckout(true);
-  }, [user?.isGuest]);
+  }, [user]);
 
   const handleCheckoutSuccess = useCallback((result) => {
     setShowCheckout(false);
@@ -373,10 +369,10 @@ function Cart() {
             </div>
             
             <button 
-              className={`btn-checkout ${user?.isGuest ? 'guest-disabled' : ''}`}
+              className="btn-checkout"
               onClick={handleCheckout}
             >
-              {user?.isGuest ? '🔒 Regístrate para Comprar' : 'Proceder al Pago'}
+              Proceder al Pago
             </button>
             
             <Link to="/" className="btn-continue-shopping-small">

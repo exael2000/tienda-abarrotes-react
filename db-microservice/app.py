@@ -501,9 +501,11 @@ def sync_cart():
 # ===== ENDPOINTS DE ÓRDENES =====
 
 @app.route('/api/orders', methods=['POST'])
+@jwt_required(optional=True)
 def create_order():
     """Crear nueva orden"""
     data = request.get_json()
+    user_id = get_jwt_identity()  # Será None si no hay token (invitado)
     
     # Validar datos requeridos
     required_fields = ['customer_name', 'customer_phone', 'payment_method', 'total_amount', 'items']

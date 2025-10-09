@@ -6,7 +6,8 @@ const isDevelopment = process.env.NODE_ENV === 'development' || window.location.
 // Configurar URL específicamente para PythonAnywhere
 let API_URL;
 if (isDevelopment) {
-  API_URL = 'http://localhost:5001/api';
+  // En desarrollo, usar el backend proxy para consistencia
+  API_URL = 'http://localhost:5000/api';
 } else if (window.location.hostname.includes('pythonanywhere.com')) {
   // Para PythonAnywhere, usar la URL completa con HTTPS
   API_URL = `https://${window.location.hostname}/api`;
@@ -68,3 +69,8 @@ export const getProduct = (productId) => api.get(`${API_URL}/products/${productI
 export const getSuppliers = () => api.get(`${API_URL}/suppliers`);
 
 export const getBrands = () => api.get(`${API_URL}/brands`);
+
+export const createOrder = (orderData) => api.post(`${API_URL}/orders`, orderData);
+
+// Exportar el cliente api para uso directo
+export { api };
