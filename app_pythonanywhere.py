@@ -268,6 +268,64 @@ def get_cart():
     
     return jsonify(cart_data)
 
+@app.route('/api/cart/add', methods=['POST'])
+@jwt_required()
+def add_to_cart():
+    """Agregar item al carrito"""
+    user_id = int(get_jwt_identity())
+    data = request.get_json()
+    
+    product_id = data.get('product_id')
+    quantity = data.get('quantity', 1)
+    
+    if not product_id:
+        return jsonify({'error': 'product_id es requerido'}), 400
+    
+    conn = get_db_connection()
+    
+    # Verificar que el producto existe
+    product = conn.execute('SELECT id, stock FROM productos WHERE id = ?', (product_id,)).fetchone()
+    if not product:
+        conn.close()
+        return jsonify({'error': 'Producto no encontrado'}), 404
+    
+    # Verificar stock disponible
+    existing_item = conn.execute('SELECT quantity FROM cart_items WHERE user_id = ? AND product_id = ?', 
+                                (user_id, product_id)).fetchone()
+    current_quantity = existing_item['quantity'] if existing_item else 0
+    new_total_quantity = current_quantity + quantity
+    
+    if new_total_quantity > product['stock']:
+        conn.close()
+        return jsonify({'error': 'Stock insuficiente'}), 400
+    
+    # Insertar o actualizar item en carrito
+    if existing_item:
+        # Si ya existe, solo actualizar cantidad
+        conn.execute('''
+            UPDATE cart_items 
+            SET quantity = quantity + ?, updated_at = CURRENT_TIMESTAMP 
+            WHERE user_id = ? AND product_id = ?
+        ''', (quantity, user_id, product_id))
+    else:
+        # Si es nuevo, obtener el próximo order_position
+        max_order = conn.execute('''
+            SELECT COALESCE(MAX(order_position), 0) + 1 as next_order
+            FROM cart_items WHERE user_id = ?
+        ''', (user_id,)).fetchone()
+        
+        next_order = max_order['next_order'] if max_order else 1
+        
+        conn.execute('''
+            INSERT INTO cart_items (user_id, product_id, quantity, order_position, updated_at)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ''', (user_id, product_id, quantity, next_order))
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'message': 'Producto agregado al carrito'}), 200
+
 @app.route('/api/cart/sync', methods=['POST'])
 @jwt_required()
 def sync_cart():
