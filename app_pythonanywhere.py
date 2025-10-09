@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, send_from_directory, send_file
+from flask import Flask, jsonify, request, send_from_directory, send_file, render_template_string
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
 import sqlite3
@@ -8,6 +8,10 @@ import os
 import stripe
 import json
 from decimal import Decimal
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 app = Flask(__name__, static_folder='build', static_url_path='')
 CORS(app, origins=["*"], allow_headers=["*"], methods=["*"])
@@ -35,13 +39,13 @@ jwt = JWTManager(app)
 
 # Configuración Stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
-STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY')
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
 
 # Validar que las claves de Stripe estén configuradas
 if not stripe.api_key:
     raise ValueError("STRIPE_SECRET_KEY environment variable is required")
-if not STRIPE_PUBLIC_KEY:
-    raise ValueError("STRIPE_PUBLIC_KEY environment variable is required")
+if not STRIPE_PUBLISHABLE_KEY:
+    raise ValueError("STRIPE_PUBLISHABLE_KEY environment variable is required")
 
 def get_db_connection():
     db_path = os.path.join(os.path.dirname(__file__), 'db.sqlite3')
@@ -336,7 +340,7 @@ def clear_cart():
 def get_stripe_config():
     """Obtener clave pública de Stripe"""
     return jsonify({
-        'publicKey': STRIPE_PUBLIC_KEY
+        'publicKey': STRIPE_PUBLISHABLE_KEY
     })
 
 @app.route('/api/stripe/create-checkout-session', methods=['POST'])
@@ -357,6 +361,8 @@ def create_checkout_session():
         
         # Preparar line_items para Stripe
         line_items = []
+        items_metadata = []
+        
         for item in items:
             line_items.append({
                 'price_data': {
@@ -364,10 +370,21 @@ def create_checkout_session():
                     'product_data': {
                         'name': item.get('name', ''),
                         'images': [item.get('image_url', '')] if item.get('image_url') else [],
+                        'metadata': {
+                            'product_id': str(item.get('product_id', item.get('id', 0)))
+                        }
                     },
                     'unit_amount': int((item.get('unit_price', 0)) * 100),  # Convertir a centavos
                 },
                 'quantity': item.get('quantity', 1),
+            })
+            
+            # Guardar metadata de productos para después
+            items_metadata.append({
+                'product_id': item.get('product_id', item.get('id', 0)),
+                'name': item.get('name', ''),
+                'quantity': item.get('quantity', 1),
+                'unit_price': item.get('unit_price', 0)
             })
         
         # Crear sesión de Checkout
@@ -382,7 +399,8 @@ def create_checkout_session():
                 'customer_email': customer_info['email'],
                 'customer_phone': customer_info['phone'],
                 'delivery_address': customer_info['address'],
-                'order_notes': customer_info['notes']
+                'order_notes': customer_info['notes'],
+                'items_data': json.dumps(items_metadata)  # Guardar información de productos
             }
         )
         
@@ -397,6 +415,278 @@ def create_checkout_session():
     except Exception as e:
         print(f"Error al crear sesión de Checkout: {e}")
         return jsonify({'error': 'Error al crear sesión de Checkout'}), 500
+
+@app.route('/api/verify-payment', methods=['POST'])
+def verify_stripe_payment():
+    """Verificar pago de Stripe y crear orden"""
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')
+        
+        if not session_id:
+            return jsonify({'error': 'session_id requerido'}), 400
+        
+        print(f"🔍 Verificando sesión de Stripe: {session_id}")
+        
+        # Obtener sesión de Stripe
+        session = stripe.checkout.Session.retrieve(session_id)
+        
+        if session.payment_status != 'paid':
+            return jsonify({'error': 'Pago no completado'}), 400
+        
+        # Extraer metadata
+        metadata = session.metadata
+        
+        # Extraer información de productos desde metadata
+        items_data = []
+        if 'items_data' in metadata:
+            try:
+                items_data = json.loads(metadata['items_data'])
+            except json.JSONDecodeError:
+                print("⚠️ Error al parsear items_data de metadata")
+        
+        # Obtener line items para verificar
+        line_items = stripe.checkout.Session.list_line_items(session_id)
+        
+        # Crear la orden en la base de datos
+        conn = get_db_connection()
+        
+        # Generar número de orden
+        import time
+        order_number = f"ORD-{int(time.time())}"
+        
+        # Calcular total
+        total_amount = session.amount_total / 100  # Convertir de centavos
+        
+        # Insertar orden
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO orders (
+                order_number, payment_method, payment_status, total_amount,
+                stripe_session_id, customer_name, customer_phone, customer_email,
+                delivery_address, order_notes, status, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ''', (
+            order_number,
+            'stripe',
+            'completed',
+            total_amount,
+            session_id,
+            metadata.get('customer_name', ''),
+            metadata.get('customer_phone', ''),
+            metadata.get('customer_email', ''),
+            metadata.get('delivery_address', ''),
+            metadata.get('order_notes', ''),
+            'confirmed'
+        ))
+        
+        order_id = cursor.lastrowid
+        
+        # Insertar items de la orden usando metadata
+        if items_data:
+            for item_info in items_data:
+                cursor.execute('''
+                    INSERT INTO order_items (
+                        order_id, product_id, quantity, unit_price, total_price
+                    ) VALUES (?, ?, ?, ?, ?)
+                ''', (
+                    order_id,
+                    item_info.get('product_id', 1),
+                    item_info.get('quantity', 1),
+                    item_info.get('unit_price', 0),
+                    item_info.get('unit_price', 0) * item_info.get('quantity', 1)
+                ))
+        else:
+            # Fallback: usar line_items de Stripe
+            for item in line_items.data:
+                price_data = item.price
+                cursor.execute('''
+                    INSERT INTO order_items (
+                        order_id, product_id, quantity, unit_price, total_price
+                    ) VALUES (?, ?, ?, ?, ?)
+                ''', (
+                    order_id,
+                    1,  # ID genérico
+                    item.quantity,
+                    price_data.unit_amount / 100,
+                    (price_data.unit_amount * item.quantity) / 100
+                ))
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ Orden creada exitosamente: {order_number}")
+        
+        return jsonify({
+            'success': True,
+            'order_number': order_number,
+            'order_id': order_id,
+            'total_amount': total_amount,
+            'message': 'Pago verificado y orden creada exitosamente'
+        })
+        
+    except stripe.error.StripeError as e:
+        print(f"❌ Error de Stripe: {e}")
+        return jsonify({'error': f'Error de Stripe: {str(e)}'}), 500
+    except Exception as e:
+        print(f"❌ Error al verificar pago: {e}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
+
+@app.route('/checkout/success')
+def checkout_success():
+    """Página de éxito del pago"""
+    session_id = request.args.get('session_id')
+    
+    if not session_id:
+        return "Error: No se proporcionó session_id", 400
+    
+    # HTML simple para la página de éxito
+    html_template = '''
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Pago Exitoso - Tienda de Abarrotes</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 600px;
+                margin: 50px auto;
+                padding: 20px;
+                text-align: center;
+                background-color: #f8f9fa;
+            }
+            .success-container {
+                background: white;
+                padding: 40px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .success-icon {
+                font-size: 60px;
+                color: #28a745;
+                margin-bottom: 20px;
+            }
+            .session-id {
+                background: #f8f9fa;
+                padding: 10px;
+                border-radius: 5px;
+                font-family: monospace;
+                margin: 20px 0;
+                word-break: break-all;
+            }
+            .btn {
+                background: #007bff;
+                color: white;
+                padding: 10px 20px;
+                text-decoration: none;
+                border-radius: 5px;
+                display: inline-block;
+                margin-top: 20px;
+            }
+            .btn:hover {
+                background: #0056b3;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="success-container">
+            <div class="success-icon">✅</div>
+            <h1>¡Pago Exitoso!</h1>
+            <p>Tu pago ha sido procesado correctamente.</p>
+            <p><strong>ID de Sesión:</strong></p>
+            <div class="session-id">{{ session_id }}</div>
+            <p>Recibirás un correo de confirmación con los detalles de tu pedido.</p>
+            <a href="/" class="btn">Volver a la Tienda</a>
+        </div>
+        
+        <script>
+            // Verificar el pago automáticamente
+            fetch('/api/verify-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    session_id: '{{ session_id }}'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ Orden creada:', data.order_number);
+                } else {
+                    console.error('❌ Error al crear orden:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error al verificar pago:', error);
+            });
+        </script>
+    </body>
+    </html>
+    '''
+    
+    return render_template_string(html_template, session_id=session_id)
+
+@app.route('/checkout/cancel')
+def checkout_cancel():
+    """Página de cancelación del pago"""
+    html_template = '''
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Pago Cancelado - Tienda de Abarrotes</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 600px;
+                margin: 50px auto;
+                padding: 20px;
+                text-align: center;
+                background-color: #f8f9fa;
+            }
+            .cancel-container {
+                background: white;
+                padding: 40px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .cancel-icon {
+                font-size: 60px;
+                color: #dc3545;
+                margin-bottom: 20px;
+            }
+            .btn {
+                background: #007bff;
+                color: white;
+                padding: 10px 20px;
+                text-decoration: none;
+                border-radius: 5px;
+                display: inline-block;
+                margin-top: 20px;
+            }
+            .btn:hover {
+                background: #0056b3;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="cancel-container">
+            <div class="cancel-icon">❌</div>
+            <h1>Pago Cancelado</h1>
+            <p>Has cancelado el proceso de pago.</p>
+            <p>Tus productos siguen en el carrito y puedes intentar de nuevo cuando lo desees.</p>
+            <a href="/" class="btn">Volver a la Tienda</a>
+        </div>
+    </body>
+    </html>
+    '''
+    
+    return render_template_string(html_template)
 
 @app.route('/api/orders/create-payment-intent', methods=['POST'])
 @jwt_required()
