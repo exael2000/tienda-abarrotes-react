@@ -4,9 +4,23 @@ from flask_jwt_extended import JWTManager, jwt_required, create_access_token, ge
 import sqlite3
 import bcrypt
 from datetime import datetime, timedelta
+import stripe
+import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+
+# Configure proper headers
+@app.after_request
+def after_request(response):
+    response.headers['Content-Type'] = 'application/json; charset=utf-8'
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    return response
 
 # Configuración JWT
 app.config['JWT_SECRET_KEY'] = 'tu-clave-secreta-super-segura-cambiar-en-produccion'
@@ -401,6 +415,26 @@ def remove_from_cart():
     
     return jsonify({'message': 'Producto eliminado del carrito'}), 200
 
+@app.route('/api/cart/clear', methods=['DELETE'])
+@jwt_required()
+def clear_cart():
+    """Limpiar todo el carrito del usuario"""
+    user_id = int(get_jwt_identity())
+    
+    print(f"🗑️ Backend: Clearing all cart items for user {user_id}")
+    
+    conn = get_db_connection()
+    
+    # Eliminar todos los items del carrito del usuario
+    cursor = conn.execute('DELETE FROM cart_items WHERE user_id = ?', (user_id,))
+    deleted_count = cursor.rowcount
+    conn.commit()
+    conn.close()
+    
+    print(f"🗑️ Backend: Cleared {deleted_count} items from cart for user {user_id}")
+    
+    return jsonify({'message': f'Carrito limpiado - {deleted_count} productos eliminados'}), 200
+
 @app.route('/api/cart/sync', methods=['POST'])
 @jwt_required()
 def sync_cart():
@@ -462,6 +496,311 @@ def sync_cart():
     conn.close()
     
     return jsonify({'message': 'Carrito sincronizado exitosamente'}), 200
+
+# ===== ENDPOINTS DE ÓRDENES =====
+
+@app.route('/api/orders', methods=['POST'])
+def create_order():
+    """Crear nueva orden"""
+    data = request.get_json()
+    
+    # Validar datos requeridos
+    required_fields = ['customer_name', 'customer_phone', 'payment_method', 'total_amount', 'items']
+    for field in required_fields:
+        if not data.get(field):
+            return jsonify({'error': f'El campo {field} es requerido'}), 400
+    
+    # Validar que hay items
+    if not data['items'] or len(data['items']) == 0:
+        return jsonify({'error': 'La orden debe tener al menos un producto'}), 400
+    
+    # Validar método de pago
+    if data['payment_method'] not in ['cash', 'card']:
+        return jsonify({'error': 'Método de pago inválido'}), 400
+    
+    conn = get_db_connection()
+    
+    try:
+        # Generar número de orden único
+        import time
+        import random
+        timestamp = int(time.time())
+        random_num = random.randint(100, 999)
+        order_number = f"ORD-{timestamp}-{random_num}"
+        
+        # Insertar orden principal
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO orders (
+                order_number, payment_method, payment_status, total_amount,
+                customer_name, customer_phone, customer_email, delivery_address, order_notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            order_number,
+            data['payment_method'],
+            'completed' if data['payment_method'] == 'cash' else 'pending',
+            data['total_amount'],
+            data['customer_name'],
+            data['customer_phone'],
+            data.get('customer_email', ''),
+            data.get('delivery_address', ''),
+            data.get('order_notes', '')
+        ))
+        
+        order_id = cursor.lastrowid
+        
+        # Insertar items de la orden
+        for item in data['items']:
+            cursor.execute('''
+                INSERT INTO order_items (
+                    order_id, product_id, quantity, unit_price, total_price
+                ) VALUES (?, ?, ?, ?, ?)
+            ''', (
+                order_id,
+                item['product_id'],
+                item['quantity'],
+                item['unit_price'],
+                item['unit_price'] * item['quantity']
+            ))
+        
+        conn.commit()
+        
+        return jsonify({
+            'message': 'Orden creada exitosamente',
+            'order_id': order_id,
+            'order_number': order_number,
+            'status': 'completed' if data['payment_method'] == 'cash' else 'pending'
+        }), 201
+        
+    except Exception as e:
+        conn.rollback()
+        print(f"Error al crear orden: {e}")
+        return jsonify({'error': 'Error al crear la orden'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/orders/<order_number>', methods=['GET'])
+def get_order(order_number):
+    """Obtener detalles de una orden"""
+    conn = get_db_connection()
+    
+    try:
+        # Obtener orden
+        order = conn.execute('''
+            SELECT * FROM orders WHERE order_number = ?
+        ''', (order_number,)).fetchone()
+        
+        if not order:
+            return jsonify({'error': 'Orden no encontrada'}), 404
+        
+        # Obtener items de la orden
+        items = conn.execute('''
+            SELECT oi.*, p.name as product_name, p.image
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            WHERE oi.order_id = ?
+        ''', (order['id'],)).fetchall()
+        
+        return jsonify({
+            'order': dict(order),
+            'items': [dict(item) for item in items]
+        }), 200
+        
+    except Exception as e:
+        print(f"Error al obtener orden: {e}")
+        return jsonify({'error': 'Error al obtener la orden'}), 500
+    finally:
+        conn.close()
+
+# ===== ENDPOINTS DE STRIPE =====
+
+# Configuración de Stripe desde variables de entorno
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
+
+if not STRIPE_SECRET_KEY or not STRIPE_PUBLIC_KEY:
+    raise ValueError("Las claves de Stripe no están configuradas en las variables de entorno")
+
+# Configurar Stripe
+stripe.api_key = STRIPE_SECRET_KEY
+
+@app.route('/api/stripe/config', methods=['GET'])
+def get_stripe_config():
+    """Obtener configuración pública de Stripe"""
+    try:
+        config = {
+            'publishable_key': STRIPE_PUBLIC_KEY
+        }
+        
+        return jsonify(config), 200
+        
+    except Exception as e:
+        print(f"Error al obtener configuración de Stripe: {e}")
+        return jsonify({'error': 'Error al obtener configuración de Stripe'}), 500
+
+@app.route('/api/stripe/create-checkout-session', methods=['POST'])
+def create_checkout_session():
+    """Crear sesión de Stripe Checkout"""
+    data = request.get_json()
+    
+    try:
+        # Extraer datos del pedido
+        items = data.get('items', [])
+        customer_info = {
+            'name': data.get('customer_name', ''),
+            'email': data.get('customer_email', ''),
+            'phone': data.get('customer_phone', ''),
+            'address': data.get('delivery_address', ''),
+            'notes': data.get('order_notes', '')
+        }
+        
+        # Preparar line_items para Stripe
+        line_items = []
+        for item in items:
+            line_items.append({
+                'price_data': {
+                    'currency': 'mxn',
+                    'product_data': {
+                        'name': item.get('name', ''),
+                        'images': [item.get('image_url', '')] if item.get('image_url') else [],
+                    },
+                    'unit_amount': int((item.get('unit_price', 0)) * 100),  # Convertir a centavos
+                },
+                'quantity': item.get('quantity', 1),
+            })
+        
+        # Crear sesión de Checkout
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=line_items,
+            mode='payment',
+            success_url='http://localhost:3000/checkout/success?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url='http://localhost:3000/checkout/cancel',
+            metadata={
+                'customer_name': customer_info['name'],
+                'customer_email': customer_info['email'],
+                'customer_phone': customer_info['phone'],
+                'delivery_address': customer_info['address'],
+                'order_notes': customer_info['notes']
+            }
+        )
+        
+        return jsonify({
+            'id': checkout_session.id,
+            'url': checkout_session.url
+        }), 200
+        
+    except stripe.error.StripeError as e:
+        print(f"Error de Stripe: {e}")
+        return jsonify({'error': f'Error de Stripe: {str(e)}'}), 400
+    except Exception as e:
+        print(f"Error al crear sesión de Checkout: {e}")
+        return jsonify({'error': 'Error al crear sesión de Checkout'}), 500
+
+@app.route('/api/stripe/create-payment-intent', methods=['POST'])
+def create_payment_intent():
+    """Crear Payment Intent para Stripe"""
+    data = request.get_json()
+    
+    try:
+        amount = data.get('amount', 0)
+        currency = data.get('currency', 'mxn')
+        
+        # Crear el Payment Intent real con Stripe
+        payment_intent = stripe.PaymentIntent.create(
+            amount=amount,  # Stripe espera centavos
+            currency=currency,
+            metadata={
+                'integration_check': 'accept_a_payment'
+            }
+        )
+        
+        return jsonify({
+            'client_secret': payment_intent.client_secret,
+            'id': payment_intent.id,
+            'amount': payment_intent.amount,
+            'currency': payment_intent.currency,
+            'status': payment_intent.status
+        }), 200
+        
+    except stripe.error.StripeError as e:
+        print(f"Error de Stripe: {e}")
+        return jsonify({'error': f'Error de Stripe: {str(e)}'}), 400
+    except Exception as e:
+        print(f"Error al crear Payment Intent: {e}")
+        return jsonify({'error': 'Error al crear Payment Intent'}), 500
+
+@app.route('/api/stripe/confirm-payment', methods=['POST'])
+def confirm_payment():
+    """Confirmar pago con Stripe (simulado)"""
+    data = request.get_json()
+    
+    try:
+        payment_intent_id = data.get('payment_intent_id')
+        
+        # En un entorno real, aquí se confirmaría el pago con Stripe
+        # Por ahora, simularemos que el pago fue exitoso
+        
+        # Crear la orden igual que en el endpoint de efectivo
+        customer_name = data.get('customer_name', '')
+        customer_phone = data.get('customer_phone', '')
+        customer_email = data.get('customer_email', '')
+        delivery_address = data.get('delivery_address', '')
+        order_notes = data.get('order_notes', '')
+        total_amount = data.get('total_amount', 0)
+        items = data.get('items', [])
+        
+        conn = get_db_connection()
+        
+        # Crear número único de orden
+        order_number = f"ORD-{int(datetime.now().timestamp())}-{hash(customer_name) % 1000:03d}"
+        
+        # Insertar orden principal
+        conn.execute('''
+            INSERT INTO orders (
+                order_number, customer_name, customer_phone, customer_email,
+                delivery_address, order_notes, payment_method, total_amount, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            order_number, customer_name, customer_phone, customer_email,
+            delivery_address, order_notes, 'card', total_amount, 'completed'
+        ))
+        
+        order_id = conn.lastrowid
+        
+        # Insertar items de la orden
+        for item in items:
+            conn.execute('''
+                INSERT INTO order_items (
+                    order_id, product_id, name, quantity, unit_price, image_url
+                ) VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                order_id, 
+                item.get('product_id', 0),
+                item.get('name', ''),
+                item.get('quantity', 1),
+                item.get('unit_price', 0),
+                item.get('image_url', '')
+            ))
+        
+        conn.commit()
+        
+        return jsonify({
+            'message': 'Pago procesado exitosamente',
+            'order_id': order_id,
+            'order_number': order_number,
+            'payment_intent_id': payment_intent_id,
+            'status': 'completed'
+        }), 200
+        
+    except Exception as e:
+        print(f"Error al confirmar pago: {e}")
+        if conn:
+            conn.rollback()
+        return jsonify({'error': 'Error al procesar el pago'}), 500
+    finally:
+        if conn:
+            conn.close()
 
 if __name__ == '__main__':
     # Configuración para desarrollo local

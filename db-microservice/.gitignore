@@ -1,0 +1,14 @@
+# Variables de entorno con claves secretas
+.env
+
+# Cache de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Base de datos local
+*.sqlite3
+*.db
+
+# Logs
+*.log

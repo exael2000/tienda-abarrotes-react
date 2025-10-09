@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { formatPrice } from '../utils/currency';
+import Checkout from './Checkout';
 import './Cart.css';
 import './ProductList.css'; // Importar estilos del ProductList para el bottom sheet
 
@@ -164,6 +165,7 @@ function Cart() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
 
   // Ordenar items del carrito para asegurar consistencia visual
   const sortedCartItems = [...cartItems].sort((a, b) => {
@@ -192,9 +194,21 @@ function Cart() {
       setShowRegisterPrompt(true);
       return;
     }
-    // Aquí iría la lógica normal de checkout para usuarios registrados
-    alert('Procesando pago...');
+    // Mostrar el componente de checkout
+    setShowCheckout(true);
   }, [user?.isGuest]);
+
+  const handleCheckoutSuccess = useCallback((result) => {
+    setShowCheckout(false);
+    // Quitar alert molesto - la información ya se mostró en la página de confirmación
+    // alert(`¡Orden completada exitosamente! Número de orden: ${result.order_number}`);
+    // Opcional: navegar a una página de confirmación
+    // navigate('/orders');
+  }, []);
+
+  const handleCheckoutCancel = useCallback(() => {
+    setShowCheckout(false);
+  }, []);
 
   const handleGoToRegister = useCallback(() => {
     console.log('🔑 handleGoToRegister called - saving cart for later combination');
@@ -240,6 +254,17 @@ function Cart() {
     navigate('/');
   }, [cartItems, logout, navigate]);
 
+  // Si se está mostrando el checkout, renderizar el componente Checkout
+  if (showCheckout) {
+    return (
+      <Checkout 
+        onSuccess={handleCheckoutSuccess}
+        onCancel={handleCheckoutCancel}
+      />
+    );
+  }
+
+  // Solo mostrar carrito vacío si NO estamos en checkout
   if (sortedCartItems.length === 0) {
     return (
       <div className="cart-container">

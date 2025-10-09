@@ -9,6 +9,10 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRES', 24)))
     DATABASE_URL = os.environ.get('DATABASE_URL') or 'sqlite:///db-microservice/db.sqlite3'
     
+    # Configuración de Stripe
+    STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
+    STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY')
+    
 class DevelopmentConfig(Config):
     """Configuración para desarrollo"""
     DEBUG = True

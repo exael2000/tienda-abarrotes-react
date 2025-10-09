@@ -245,11 +245,32 @@ export function CartProvider({ children }) {
     }
   }, []);
 
-  const clearCart = () => {
-    if (window.confirm('¿Estás seguro de que quieres vaciar el carrito?')) {
+  const clearCart = useCallback((silent = false) => {
+    if (silent || window.confirm('¿Estás seguro de que quieres vaciar el carrito?')) {
       dispatch({ type: CART_ACTIONS.CLEAR_CART });
+      
+      // Sincronizar limpieza con BD si está autenticado y no es invitado
+      const token = localStorage.getItem('access_token');
+      const isGuest = localStorage.getItem('isGuest') === 'true';
+      
+      if (token && !isGuest) {
+        console.log('🗑️ Clearing cart in database...');
+        fetch('http://localhost:5000/api/cart/clear', {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }).then(response => {
+          console.log('🗑️ Database cart clear response:', response.status);
+          return response.json();
+        }).then(data => {
+          console.log('🗑️ Database cart cleared successfully:', data);
+        }).catch(error => {
+          console.error('❌ Error clearing cart in database:', error);
+        });
+      }
     }
-  };
+  }, []);
 
   const getCartTotal = () => {
     return state.cartItems.reduce((total, item) => {

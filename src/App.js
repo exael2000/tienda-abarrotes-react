@@ -7,18 +7,24 @@ import Cart from './components/Cart';
 import Login from './components/Login';
 import Register from './components/Register';
 import Navbar from './components/Navbar';
+import CheckoutSuccess from './components/CheckoutSuccess';
+import CheckoutCancel from './components/CheckoutCancel';
 import './App.css';
 
 // Componente para redirección única después del login
 const PostLoginRedirect = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const hasRedirected = React.useRef(false);
 
   useEffect(() => {
     // Solo redirigir una vez cuando se autentica, pero con un pequeño delay
     // para permitir que el carrito se cargue primero
-    if (isAuthenticated && !hasRedirected.current) {
+    // NO redirigir si está en páginas de checkout
+    const isCheckoutPage = location.pathname.startsWith('/checkout/');
+    
+    if (isAuthenticated && !hasRedirected.current && !isCheckoutPage) {
       hasRedirected.current = true;
       setTimeout(() => {
         console.log('🔄 User just logged in, redirecting to product list...');
@@ -30,7 +36,7 @@ const PostLoginRedirect = () => {
     if (!isAuthenticated) {
       hasRedirected.current = false;
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, location.pathname]);
 
   return null;
 };
@@ -197,6 +203,8 @@ const AppContent = () => {
           <Routes>
             <Route path="/" element={<ProductList />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout/success" element={<CheckoutSuccess />} />
+            <Route path="/checkout/cancel" element={<CheckoutCancel />} />
           </Routes>
         </div>
       </Router>
