@@ -180,6 +180,50 @@ def init_complete_database():
             # El campo ya existe o hay otro error, continuamos
             pass
         
+        # ======================================
+        # 5. TABLA DE ÓRDENES (Para Stripe)
+        # ======================================
+        print("📦 Creando tabla de órdenes...")
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                order_number TEXT UNIQUE NOT NULL,
+                payment_method TEXT NOT NULL,
+                payment_status TEXT DEFAULT 'pending',
+                total_amount REAL NOT NULL,
+                stripe_payment_intent_id TEXT,
+                stripe_session_id TEXT,
+                customer_name TEXT NOT NULL,
+                customer_phone TEXT NOT NULL,
+                customer_email TEXT,
+                delivery_address TEXT,
+                order_notes TEXT,
+                order_status TEXT DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+            )
+        ''')
+        
+        # ======================================
+        # 6. TABLA DE ITEMS DE ÓRDENES (Para Stripe)
+        # ======================================
+        print("📦 Creando tabla de items de órdenes...")
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS order_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id INTEGER NOT NULL,
+                product_id INTEGER NOT NULL,
+                quantity INTEGER NOT NULL,
+                unit_price REAL NOT NULL,
+                total_price REAL NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
+                FOREIGN KEY (product_id) REFERENCES productos (id) ON DELETE CASCADE
+            )
+        ''')
+        
         # Commit de todos los cambios
         conn.commit()
         
@@ -201,9 +245,10 @@ def init_complete_database():
         print(f"👥 Usuarios: {users_count}")
         
         print("\n🎉 ¡Base de datos inicializada completamente!")
-        print("✅ Todas las tablas creadas: productos, users, user_sessions, cart_items")
+        print("✅ Todas las tablas creadas: productos, users, user_sessions, cart_items, orders, order_items")
         print("✅ Datos de ejemplo cargados")
         print("✅ Usuario de prueba disponible (exael/exael)")
+        print("✅ Sistema de órdenes Stripe configurado")
         
         # Copiar también al directorio raíz del proyecto
         try:
