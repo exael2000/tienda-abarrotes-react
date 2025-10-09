@@ -16,7 +16,10 @@ CORS(app, origins=["*"], allow_headers=["*"], methods=["*"])
 @app.after_request
 def after_request(response):
     """Añadir headers de seguridad a todas las respuestas"""
-    response.headers['Content-Type'] = 'application/json; charset=utf-8'
+    # Solo aplicar Content-Type JSON a rutas API, no a archivos estáticos
+    if request.path.startswith('/api/'):
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+    
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
