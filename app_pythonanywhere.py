@@ -41,11 +41,11 @@ jwt = JWTManager(app)
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
 
-# Validar que las claves de Stripe estén configuradas
+# Validar que las claves de Stripe estén configuradas (solo mostrar warning, no fallar)
 if not stripe.api_key:
-    raise ValueError("STRIPE_SECRET_KEY environment variable is required")
+    print("WARNING: STRIPE_SECRET_KEY environment variable is not set")
 if not STRIPE_PUBLISHABLE_KEY:
-    raise ValueError("STRIPE_PUBLISHABLE_KEY environment variable is required")
+    print("WARNING: STRIPE_PUBLISHABLE_KEY environment variable is not set")
 
 def get_db_connection():
     db_path = os.path.join(os.path.dirname(__file__), 'db.sqlite3')

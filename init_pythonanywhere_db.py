@@ -121,6 +121,13 @@ def create_database():
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_cart_user_id ON cart_items(user_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_cart_product_id ON cart_items(product_id)')
         
+        # Verificar y añadir columna status a orders si no existe
+        try:
+            cursor.execute('SELECT status FROM orders LIMIT 1')
+        except sqlite3.OperationalError:
+            print("📝 Añadiendo columna 'status' a tabla orders...")
+            cursor.execute('ALTER TABLE orders ADD COLUMN status TEXT DEFAULT \'pending\'')
+        
         # Índices para orders
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)')
@@ -130,6 +137,19 @@ def create_database():
         # Índices para order_items
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id)')
+        
+        # Verificar y añadir columnas faltantes a productos si no existen
+        try:
+            cursor.execute('SELECT category FROM productos LIMIT 1')
+        except sqlite3.OperationalError:
+            print("📝 Añadiendo columna 'category' a tabla productos...")
+            cursor.execute('ALTER TABLE productos ADD COLUMN category TEXT')
+        
+        try:
+            cursor.execute('SELECT is_active FROM productos LIMIT 1')
+        except sqlite3.OperationalError:
+            print("📝 Añadiendo columna 'is_active' a tabla productos...")
+            cursor.execute('ALTER TABLE productos ADD COLUMN is_active BOOLEAN DEFAULT 1')
         
         # Índices para productos
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_productos_category ON productos(category)')
