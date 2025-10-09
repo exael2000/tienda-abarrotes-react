@@ -1,13 +1,26 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './CheckoutCancel.css';
 
 function CheckoutCancel() {
+  const navigate = useNavigate();
+
+  // Optimización: Prevenir cualquier procesamiento innecesario
+  useEffect(() => {
+    console.log('🚫 CheckoutCancel mounted - pago cancelado');
+    return () => {
+      console.log('🚫 CheckoutCancel unmounted');
+    };
+  }, []);
+
   const handleBackToCheckout = () => {
-    window.history.back();
+    // Usar navigate en lugar de window.history para mejor performance
+    navigate(-1);
   };
 
   const handleBackToStore = () => {
-    window.location.href = '/';
+    // Usar navigate en lugar de window.location para mejor UX
+    navigate('/');
   };
 
   return (

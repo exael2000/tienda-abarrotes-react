@@ -166,6 +166,42 @@
   box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
 }
 
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.simple-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: smoothSpin 0.8s linear infinite;
+}
+
+.loading-content h3 {
+  color: #2d3748;
+  font-size: 1.5rem;
+  margin: 0.5rem 0;
+  font-weight: 600;
+}
+
+.loading-content p {
+  color: #718096;
+  font-size: 1rem;
+  margin: 0;
+}
+
+@keyframes smoothSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Mantener el spinner anterior para compatibilidad */
 .loading-spinner {
   display: flex;
   flex-direction: column;

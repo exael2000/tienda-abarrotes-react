@@ -6,6 +6,7 @@ import bcrypt
 from datetime import datetime, timedelta
 import stripe
 import os
+import json
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
@@ -681,7 +682,8 @@ def create_checkout_session():
                 'customer_email': customer_info['email'],
                 'customer_phone': customer_info['phone'],
                 'delivery_address': customer_info['address'],
-                'order_notes': customer_info['notes']
+                'order_notes': customer_info['notes'],
+                'items': json.dumps(items)  # Guardar items para crear la orden después
             }
         )
         
@@ -801,6 +803,110 @@ def confirm_payment():
     finally:
         if conn:
             conn.close()
+
+@app.route('/api/verify-payment', methods=['POST'])
+def verify_stripe_payment():
+    """Verificar sesión de Stripe y crear orden"""
+    print("🔍 Endpoint /api/verify-payment llamado")
+    data = request.get_json()
+    session_id = data.get('session_id')
+    print(f"📋 Session ID recibido: {session_id}")
+    
+    if not session_id:
+        print("❌ Error: session_id no proporcionado")
+        return jsonify({'error': 'session_id es requerido'}), 400
+    
+    try:
+        print("🔍 Verificando sesión con Stripe...")
+        # Verificar la sesión con Stripe
+        session = stripe.checkout.Session.retrieve(session_id)
+        print(f"💳 Estado del pago: {session.payment_status}")
+        print(f"💰 Monto: {session.amount_total}")
+        
+        if session.payment_status == 'paid':
+            print("✅ Pago confirmado, creando orden...")
+            # Extraer información de la sesión
+            metadata = session.metadata or {}
+            print(f"📋 Metadata: {metadata}")
+            
+            conn = get_db_connection()
+            
+            try:
+                # Generar número de orden
+                import time
+                import random
+                timestamp = int(time.time())
+                random_num = random.randint(100, 999)
+                order_number = f"ORD-{timestamp}-{random_num}"
+                print(f"🏷️ Número de orden generado: {order_number}")
+                
+                # Crear la orden
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO orders (
+                        order_number, payment_method, payment_status, total_amount,
+                        customer_name, customer_phone, customer_email,
+                        stripe_payment_intent_id, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ''', (
+                    order_number,
+                    'card',
+                    'completed',
+                    session.amount_total / 100,  # Stripe usa centavos
+                    metadata.get('customer_name', 'Cliente Stripe'),
+                    metadata.get('customer_phone', ''),
+                    session.customer_details.email if session.customer_details else '',
+                    session.payment_intent
+                ))
+                
+                order_id = cursor.lastrowid
+                print(f"💾 Orden creada con ID: {order_id}")
+                
+                # Si hay items en metadata, agregarlos
+                if 'items' in metadata:
+                    print("📦 Agregando items a la orden...")
+                    items = json.loads(metadata['items'])
+                    print(f"📋 Items: {len(items)} productos")
+                    for item in items:
+                        cursor.execute('''
+                            INSERT INTO order_items (
+                                order_id, product_id, quantity, unit_price, total_price
+                            ) VALUES (?, ?, ?, ?, ?)
+                        ''', (
+                            order_id,
+                            item['product_id'],
+                            item['quantity'],
+                            item['unit_price'],
+                            item['unit_price'] * item['quantity']
+                        ))
+                else:
+                    print("⚠️ No se encontraron items en metadata")
+                
+                conn.commit()
+                print("✅ Orden guardada exitosamente en la base de datos")
+                
+                return jsonify({
+                    'success': True,
+                    'order_id': order_id,
+                    'order_number': order_number,
+                    'payment_status': 'completed',
+                    'message': 'Pago verificado y orden creada exitosamente'
+                }), 200
+                
+            except Exception as db_error:
+                conn.rollback()
+                print(f"Error de base de datos: {db_error}")
+                return jsonify({'error': 'Error al crear la orden en la base de datos'}), 500
+            finally:
+                conn.close()
+        else:
+            return jsonify({'error': 'El pago no está completado'}), 400
+            
+    except stripe.error.InvalidRequestError:
+        return jsonify({'error': 'Sesión de pago inválida'}), 400
+    except Exception as e:
+        print(f"Error al verificar pago: {e}")
+        return jsonify({'error': 'Error al verificar el pago'}), 500
 
 if __name__ == '__main__':
     # Configuración para desarrollo local

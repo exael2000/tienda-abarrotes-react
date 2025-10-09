@@ -272,6 +272,7 @@ function Checkout({ onSuccess, onCancel }) {
         delivery_address: formData.deliveryAddress,
         order_notes: formData.orderNotes || '',
         items: cartItems.map(item => ({
+          product_id: item.id,  // Agregar el ID del producto
           name: item.name,
           quantity: item.quantity,
           unit_price: item.price_cents ? item.price_cents / 100 : item.price,

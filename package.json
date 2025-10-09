@@ -30,7 +30,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.3",
-    "react-scripts": "^5.0.1",
+    "react-scripts": "^0.0.0",
     "web-vitals": "^4.2.4"
   },
   "devDependencies": {
@@ -63,5 +63,5 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:5000"
+  "proxy": "http://localhost:5001"
 }

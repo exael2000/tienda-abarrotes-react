@@ -19,24 +19,45 @@ function CheckoutSuccess() {
       
       try {
         setProcessed(true); // Marcar como procesado
+        console.log('🔄 Procesando pago exitoso con session_id:', sessionId);
         
-        // Aquí podríamos verificar la sesión con Stripe y crear la orden
-        // Por ahora simularemos una orden exitosa
-        const orderData = {
-          order_number: `ORD-${Date.now()}`,
-          session_id: sessionId,
-          status: 'completed',
-          payment_method: 'card'
-        };
+        // Verificar la sesión de Stripe y crear la orden
+        console.log('📡 Enviando petición a /api/verify-payment...');
+        const response = await fetch('/api/verify-payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            session_id: sessionId
+          })
+        });
         
-        setOrderDetails(orderData);
+        console.log('📨 Respuesta recibida:', response.status, response.statusText);
+        const result = await response.json();
+        console.log('📋 Datos de respuesta:', result);
         
-        // Limpiar carrito después del pago exitoso (sin confirmación)
-        clearCart(true);
+        if (response.ok) {
+          console.log('✅ Pago verificado exitosamente');
+          setOrderDetails({
+            order_number: result.order_number,
+            order_id: result.order_id,
+            session_id: sessionId,
+            status: 'completed',
+            payment_method: 'card',
+            message: result.message
+          });
+          
+          // Limpiar carrito después del pago exitoso (sin confirmación)
+          clearCart(true);
+        } else {
+          console.error('❌ Error en la respuesta del servidor:', result);
+          throw new Error(result.error || 'Error al verificar el pago');
+        }
         
       } catch (err) {
-        console.error('Error al procesar pago exitoso:', err);
-        setError('Error al procesar el pago');
+        console.error('💥 Error al procesar pago exitoso:', err);
+        setError(`Error al procesar el pago: ${err.message}`);
       } finally {
         setLoading(false);
       }
@@ -68,9 +89,10 @@ function CheckoutSuccess() {
     return (
       <div className="checkout-success-container">
         <div className="success-content">
-          <div className="loading-spinner">
-            <div className="spinner"></div>
-            <p>Procesando tu pedido...</p>
+          <div className="loading-content">
+            <div className="simple-spinner"></div>
+            <h3>Verificando pago...</h3>
+            <p>Un momento por favor</p>
           </div>
         </div>
       </div>

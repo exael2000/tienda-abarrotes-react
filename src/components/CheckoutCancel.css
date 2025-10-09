@@ -1,4 +1,4 @@
-/* CheckoutCancel.css */
+/* CheckoutCancel.css - Optimizado para carga rápida */
 .checkout-cancel-container {
   min-height: 100vh;
   display: flex;
@@ -16,18 +16,13 @@
   width: 100%;
   text-align: center;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  /* Eliminamos animaciones de entrada para carga instantánea */
 }
 
 .cancel-icon {
   font-size: 4rem;
   margin-bottom: 1.5rem;
-  animation: shake 0.8s ease-in-out;
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+  /* Eliminamos la animación shake que causaba demora */
 }
 
 .cancel-title {
@@ -66,7 +61,7 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease; /* Transición más rápida */
   text-decoration: none;
   display: inline-block;
   min-width: 150px;
@@ -78,8 +73,7 @@
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  transform: translateY(-1px); /* Efecto más sutil */
 }
 
 .btn-secondary {
@@ -89,8 +83,7 @@
 
 .btn-secondary:hover {
   background: #5a6268;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(108, 117, 125, 0.4);
+  transform: translateY(-1px); /* Efecto más sutil */
 }
 
 /* Responsive */
@@ -98,24 +91,22 @@
   .checkout-cancel-container {
     padding: 1rem;
   }
-  
+
   .cancel-content {
     padding: 2rem;
   }
-  
+
   .cancel-title {
     font-size: 2rem;
   }
-  
-  .cancel-subtitle {
-    font-size: 1rem;
-  }
-  
+
   .cancel-actions {
     flex-direction: column;
+    align-items: center;
   }
-  
+
   .btn {
-    min-width: 100%;
+    width: 100%;
+    max-width: 250px;
   }
 }
