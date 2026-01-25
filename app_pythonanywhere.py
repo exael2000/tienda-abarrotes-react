@@ -468,80 +468,98 @@ def get_stripe_config():
 
 @app.route('/api/stripe/create-checkout-session', methods=['POST'])
 def create_checkout_session():
-    """Crear sesión de Stripe Checkout"""
+    """Crear sesión de Stripe Checkout con metadata completa"""
     data = request.get_json()
     
     try:
+        print(f"📦 Datos recibidos para crear sesión: {data}")
+        
         # Extraer datos del pedido
         items = data.get('items', [])
-        customer_info = {
-            'name': data.get('customer_name', ''),
-            'email': data.get('customer_email', ''),
-            'phone': data.get('customer_phone', ''),
-            'address': data.get('delivery_address', ''),
-            'notes': data.get('order_notes', '')
-        }
+        customer_info = data.get('customer_info', {})
+        
+        # Validar que hay items
+        if not items:
+            return jsonify({'error': 'No hay items en el carrito'}), 400
         
         # Preparar line_items para Stripe
         line_items = []
         items_metadata = []
         
         for item in items:
+            # Obtener precio del item (puede venir como price_cents o calcular)
+            price_cents = item.get('price_cents')
+            if not price_cents:
+                unit_price = item.get('unit_price', item.get('price', 0))
+                price_cents = int(unit_price * 100)
+            
+            product_id = item.get('product_id', item.get('id', 0))
+            product_name = item.get('name', 'Producto')
+            quantity = item.get('quantity', 1)
+            
             line_items.append({
                 'price_data': {
                     'currency': 'mxn',
                     'product_data': {
-                        'name': item.get('name', ''),
-                        'images': [item.get('image_url', '')] if item.get('image_url') else [],
+                        'name': product_name,
+                        'images': [item.get('image')] if item.get('image') else [],
                         'metadata': {
-                            'product_id': str(item.get('product_id', item.get('id', 0)))
+                            'product_id': str(product_id)
                         }
                     },
-                    'unit_amount': int((item.get('unit_price', 0)) * 100),  # Convertir a centavos
+                    'unit_amount': price_cents,
                 },
-                'quantity': item.get('quantity', 1),
+                'quantity': quantity,
             })
             
-            # Guardar metadata de productos para después
+            # Guardar metadata de productos para después crear la orden
             items_metadata.append({
-                'product_id': item.get('product_id', item.get('id', 0)),
-                'name': item.get('name', ''),
-                'quantity': item.get('quantity', 1),
-                'unit_price': item.get('unit_price', 0)
+                'product_id': product_id,
+                'name': product_name,
+                'quantity': quantity,
+                'unit_price': price_cents / 100  # Guardar en pesos
             })
         
-        # Crear sesión de Checkout
+        print(f"🛒 Items para Stripe: {len(line_items)} productos")
+        print(f"📋 Metadata items: {items_metadata}")
+        
+        # Crear sesión de Checkout con toda la metadata necesaria
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=line_items,
             mode='payment',
-            success_url='https://exael.pythonanywhere.com/checkout/success?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url='https://exael.pythonanywhere.com/checkout/cancel',
+            success_url='http://localhost:5000/checkout/success?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url='http://localhost:5000/checkout/cancel',
             metadata={
-                'customer_name': customer_info['name'],
-                'customer_email': customer_info['email'],
-                'customer_phone': customer_info['phone'],
-                'delivery_address': customer_info['address'],
-                'order_notes': customer_info['notes'],
-                'items_data': json.dumps(items_metadata)  # Guardar información de productos
+                'customer_name': customer_info.get('name', ''),
+                'customer_email': customer_info.get('email', ''),
+                'customer_phone': customer_info.get('phone', ''),
+                'delivery_address': customer_info.get('address', ''),
+                'order_notes': customer_info.get('notes', ''),
+                'items_data': json.dumps(items_metadata)  # CRÍTICO: Guardar información de productos
             }
         )
         
+        print(f"✅ Sesión creada: {checkout_session.id}")
+        
         return jsonify({
-            'id': checkout_session.id,
-            'url': checkout_session.url
+            'url': checkout_session.url,
+            'session_id': checkout_session.id
         }), 200
         
     except stripe.error.StripeError as e:
-        print(f"Error de Stripe: {e}")
+        print(f"❌ Error de Stripe: {e}")
         return jsonify({'error': f'Error de Stripe: {str(e)}'}), 400
     except Exception as e:
-        print(f"Error al crear sesión de Checkout: {e}")
+        print(f"❌ Error al crear sesión de Checkout: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': 'Error al crear sesión de Checkout'}), 500
 
 @app.route('/api/verify-payment', methods=['POST'])
 def verify_stripe_payment():
-    """Verificar pago de Stripe y crear orden"""
+    """Verificar pago de Stripe y crear orden - PROTEGIDO CONTRA DUPLICADOS"""
+    conn = None
     try:
         data = request.get_json()
         session_id = data.get('session_id')
@@ -551,10 +569,42 @@ def verify_stripe_payment():
         
         print(f"🔍 Verificando sesión de Stripe: {session_id}")
         
+        # CRÍTICO: Verificar si ya existe una orden con este session_id
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT order_id, order_number, total_amount, customer_name, customer_phone, customer_email, delivery_address FROM orders WHERE stripe_payment_intent_id = ?', (session_id,))
+        existing_order = cursor.fetchone()
+        
+        if existing_order:
+            print(f"⚠️ Orden ya existe para session_id: {session_id} - Retornando orden existente")
+            # Obtener items de la orden existente
+            cursor.execute('''
+                SELECT oi.product_id, oi.quantity, oi.unit_price, oi.total_price, p.name, p.image
+                FROM order_items oi
+                LEFT JOIN products p ON oi.product_id = p.id
+                WHERE oi.order_id = ?
+            ''', (existing_order['order_id'],))
+            items = cursor.fetchall()
+            
+            conn.close()
+            return jsonify({
+                'success': True,
+                'order_number': existing_order['order_number'],
+                'order_id': existing_order['order_id'],
+                'total_amount': existing_order['total_amount'],
+                'customer_name': existing_order['customer_name'],
+                'customer_phone': existing_order['customer_phone'],
+                'customer_email': existing_order['customer_email'],
+                'delivery_address': existing_order['delivery_address'],
+                'items': [dict(item) for item in items],
+                'message': 'Orden ya procesada (recuperada)'
+            })
+        
         # Obtener sesión de Stripe
         session = stripe.checkout.Session.retrieve(session_id)
         
         if session.payment_status != 'paid':
+            conn.close()
             return jsonify({'error': 'Pago no completado'}), 400
         
         # Extraer metadata
@@ -568,91 +618,116 @@ def verify_stripe_payment():
             except json.JSONDecodeError:
                 print("⚠️ Error al parsear items_data de metadata")
         
-        # Obtener line items para verificar
-        line_items = stripe.checkout.Session.list_line_items(session_id)
+        # Si no hay items_data en metadata, intentar obtener de line_items
+        if not items_data:
+            line_items = stripe.checkout.Session.list_line_items(session_id)
+            items_data = [{
+                'product_id': 1,  # ID genérico si no tenemos metadata
+                'name': item.description,
+                'quantity': item.quantity,
+                'unit_price': item.price.unit_amount / 100
+            } for item in line_items.data]
         
-        # Crear la orden en la base de datos
-        conn = get_db_connection()
-        
-        # Generar número de orden
+        # Generar número de orden único
         import time
         order_number = f"ORD-{int(time.time())}"
         
         # Calcular total
         total_amount = session.amount_total / 100  # Convertir de centavos
         
-        # Insertar orden
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO orders (
-                order_number, payment_method, payment_status, total_amount,
-                stripe_payment_intent_id, customer_name, customer_phone, customer_email,
-                delivery_address, order_notes, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-        ''', (
-            order_number,
-            'stripe',
-            'completed',
-            total_amount,
-            session_id,
-            metadata.get('customer_name', ''),
-            metadata.get('customer_phone', ''),
-            metadata.get('customer_email', ''),
-            metadata.get('delivery_address', ''),
-            metadata.get('order_notes', '')
-        ))
+        # Obtener datos del cliente
+        customer_name = metadata.get('customer_name', '')
+        customer_phone = metadata.get('customer_phone', '')
+        customer_email = metadata.get('customer_email', session.customer_details.email if session.customer_details else '')
+        delivery_address = metadata.get('delivery_address', '')
+        order_notes = metadata.get('order_notes', '')
         
-        order_id = cursor.lastrowid
-        
-        # Insertar items de la orden usando metadata
-        if items_data:
+        # TRANSACCIÓN: Insertar orden e items
+        try:
+            # Insertar orden
+            cursor.execute('''
+                INSERT INTO orders (
+                    order_number, payment_method, payment_status, total_amount,
+                    stripe_payment_intent_id, customer_name, customer_phone, customer_email,
+                    delivery_address, order_notes, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ''', (
+                order_number,
+                'card',
+                'completed',
+                total_amount,
+                session_id,
+                customer_name,
+                customer_phone,
+                customer_email,
+                delivery_address,
+                order_notes
+            ))
+            
+            order_id = cursor.lastrowid
+            
+            # Insertar items de la orden
+            order_items = []
             for item_info in items_data:
+                product_id = item_info.get('product_id', 1)
+                quantity = item_info.get('quantity', 1)
+                unit_price = float(item_info.get('unit_price', 0))
+                total_price = unit_price * quantity
+                
                 cursor.execute('''
                     INSERT INTO order_items (
                         order_id, product_id, quantity, unit_price, total_price
                     ) VALUES (?, ?, ?, ?, ?)
-                ''', (
-                    order_id,
-                    item_info.get('product_id', 1),
-                    item_info.get('quantity', 1),
-                    item_info.get('unit_price', 0),
-                    item_info.get('unit_price', 0) * item_info.get('quantity', 1)
-                ))
-        else:
-            # Fallback: usar line_items de Stripe
-            for item in line_items.data:
-                price_data = item.price
-                cursor.execute('''
-                    INSERT INTO order_items (
-                        order_id, product_id, quantity, unit_price, total_price
-                    ) VALUES (?, ?, ?, ?, ?)
-                ''', (
-                    order_id,
-                    1,  # ID genérico
-                    item.quantity,
-                    price_data.unit_amount / 100,
-                    (price_data.unit_amount * item.quantity) / 100
-                ))
-        
-        conn.commit()
-        conn.close()
-        
-        print(f"✅ Orden creada exitosamente: {order_number}")
-        
-        return jsonify({
-            'success': True,
-            'order_number': order_number,
-            'order_id': order_id,
-            'total_amount': total_amount,
-            'message': 'Pago verificado y orden creada exitosamente'
-        })
+                ''', (order_id, product_id, quantity, unit_price, total_price))
+                
+                # Obtener info del producto para respuesta
+                cursor.execute('SELECT name, image FROM products WHERE id = ?', (product_id,))
+                product = cursor.fetchone()
+                
+                order_items.append({
+                    'product_id': product_id,
+                    'name': product['name'] if product else item_info.get('name', 'Producto'),
+                    'quantity': quantity,
+                    'unit_price': unit_price,
+                    'total_price': total_price,
+                    'image': product['image'] if product else None
+                })
+            
+            conn.commit()
+            print(f"✅ Orden creada exitosamente: {order_number}")
+            
+            return jsonify({
+                'success': True,
+                'order_number': order_number,
+                'order_id': order_id,
+                'total_amount': total_amount,
+                'customer_name': customer_name,
+                'customer_phone': customer_phone,
+                'customer_email': customer_email,
+                'delivery_address': delivery_address,
+                'items': order_items,
+                'message': 'Pago verificado y orden creada exitosamente'
+            })
+            
+        except Exception as db_error:
+            if conn:
+                conn.rollback()
+            print(f"❌ Error de base de datos: {db_error}")
+            raise db_error
         
     except stripe.error.StripeError as e:
         print(f"❌ Error de Stripe: {e}")
+        if conn:
+            conn.close()
         return jsonify({'error': f'Error de Stripe: {str(e)}'}), 500
     except Exception as e:
         print(f"❌ Error al verificar pago: {e}")
+        if conn:
+            conn.close()
         return jsonify({'error': 'Error interno del servidor'}), 500
+    finally:
+        if conn:
+            conn.close()
 
 @app.route('/checkout/success')
 def checkout_success():
@@ -843,7 +918,8 @@ def create_payment_intent():
 @app.route('/api/orders', methods=['POST'])
 @jwt_required(optional=True)
 def create_order():
-    """Crear nueva orden"""
+    """Crear nueva orden - PROTEGIDO CON VALIDACIONES"""
+    conn = None
     try:
         data = request.get_json()
         user_id = get_jwt_identity()  # Será None si no hay token
@@ -863,61 +939,101 @@ def create_order():
         order_notes = data.get('order_notes', '')
         stripe_payment_intent_id = data.get('stripe_payment_intent_id')
         
-        if not cart_items:
+        # Validar carrito
+        if not cart_items or len(cart_items) == 0:
             return jsonify({'error': 'El carrito está vacío'}), 400
-            
-        # Usar el total que viene del frontend
-        total_amount = data['total_amount']
+        
+        # Validar que todos los items tengan precio
+        for item in cart_items:
+            if not item.get('unit_price') or item['unit_price'] <= 0:
+                return jsonify({'error': f'Item sin precio válido: {item.get("product_id")}'}), 400
+            if not item.get('quantity') or item['quantity'] <= 0:
+                return jsonify({'error': f'Cantidad inválida para item: {item.get("product_id")}'}), 400
+        
+        # Verificar total_amount
+        total_amount = float(data['total_amount'])
+        if total_amount <= 0:
+            return jsonify({'error': 'Total de la orden debe ser mayor a 0'}), 400
+        
+        # Generar número de orden
         order_number = generate_order_number()
         
         conn = get_db_connection()
-        
-        # Crear orden
-        payment_status = 'completed' if payment_method in ['cash', 'transfer'] else 'pending'
-        
         cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO orders (
-                user_id, order_number, payment_method, payment_status, 
-                total_amount, stripe_payment_intent_id, customer_name, 
-                customer_phone, customer_email, delivery_address, order_notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            user_id, order_number, payment_method, payment_status,
-            total_amount, stripe_payment_intent_id, customer_name,
-            customer_phone, customer_email, delivery_address, order_notes
-        ))
         
-        order_id = cursor.lastrowid
+        # Determinar status de pago según método
+        if payment_method == 'cash':
+            payment_status = 'pending'  # Pago pendiente (se paga a la entrega)
+        elif payment_method == 'card':
+            payment_status = 'completed'  # Pago ya completado en Stripe
+        else:
+            payment_status = 'pending'
         
-        # Agregar items de la orden
-        for item in cart_items:
+        print(f"📦 Creando orden {order_number} - Método: {payment_method}, Status: {payment_status}")
+        
+        # TRANSACCIÓN: Crear orden
+        try:
             cursor.execute('''
-                INSERT INTO order_items (
-                    order_id, product_id, quantity, unit_price, total_price
-                ) VALUES (?, ?, ?, ?, ?)
+                INSERT INTO orders (
+                    user_id, order_number, payment_method, payment_status, 
+                    total_amount, stripe_payment_intent_id, customer_name, 
+                    customer_phone, customer_email, delivery_address, order_notes,
+                    created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ''', (
-                order_id, item['product_id'], item['quantity'], 
-                item['unit_price'], item['unit_price'] * item['quantity']
+                user_id, order_number, payment_method, payment_status,
+                total_amount, stripe_payment_intent_id, customer_name,
+                customer_phone, customer_email, delivery_address, order_notes
             ))
+            
+            order_id = cursor.lastrowid
+            
+            # Agregar items de la orden
+            for item in cart_items:
+                product_id = item['product_id']
+                quantity = int(item['quantity'])
+                unit_price = float(item['unit_price'])
+                total_price = unit_price * quantity
+                
+                cursor.execute('''
+                    INSERT INTO order_items (
+                        order_id, product_id, quantity, unit_price, total_price
+                    ) VALUES (?, ?, ?, ?, ?)
+                ''', (order_id, product_id, quantity, unit_price, total_price))
+            
+            # Limpiar carrito del usuario solo si está autenticado
+            if user_id and user_id != 'null':
+                cursor.execute('DELETE FROM cart_items WHERE user_id = ?', (user_id,))
+            
+            conn.commit()
+            print(f"✅ Orden creada exitosamente: {order_number}")
+            
+            return jsonify({
+                'message': 'Orden creada exitosamente',
+                'order_id': order_id,
+                'order_number': order_number,
+                'total_amount': total_amount,
+                'payment_status': payment_status,
+                'success': True
+            })
+            
+        except Exception as db_error:
+            if conn:
+                conn.rollback()
+            print(f"❌ Error de base de datos al crear orden: {db_error}")
+            raise db_error
         
-        # Limpiar carrito del usuario
-        if user_id and user_id != 'null':
-            cursor.execute('DELETE FROM cart_items WHERE user_id = ?', (user_id,))
-        
-        conn.commit()
-        conn.close()
-        
-        return jsonify({
-            'message': 'Orden creada exitosamente',
-            'order_id': order_id,
-            'order_number': order_number,
-            'total_amount': total_amount,
-            'payment_status': payment_status
-        })
-        
+    except ValueError as ve:
+        print(f"❌ Error de validación: {ve}")
+        return jsonify({'error': f'Datos inválidos: {str(ve)}'}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"❌ Error al crear orden: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Error interno del servidor'}), 500
+    finally:
+        if conn:
+            conn.close()
 
 @app.route('/api/orders/confirm-payment', methods=['POST'])
 @jwt_required()

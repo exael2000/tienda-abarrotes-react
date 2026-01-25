@@ -1,0 +1,173 @@
+/* Variables CSS con paleta profesional para e-commerce */
+:root {
+  /* === COLORES PRINCIPALES E-COMMERCE === */
+  --primary-color: #2563eb;        /* Azul confiable */
+  --primary-hover: #1d4ed8;
+  --primary-light: #dbeafe;
+  --secondary-color: #059669;       /* Verde compras */
+  --secondary-hover: #047857;
+  --secondary-light: #d1fae5;
+  
+  /* === COLORES DE ACCIÓN === */
+  --accent-color: #dc2626;          /* Rojo llamativo para ofertas */
+  --accent-hover: #b91c1c;
+  --accent-light: #fee2e2;
+  --success-color: #16a34a;         /* Verde éxito */
+  --success-hover: #15803d;
+  --success-light: #dcfce7;
+  --warning-color: #f59e0b;         /* Ámbar advertencias */
+  --warning-hover: #d97706;
+  --warning-light: #fef3c7;
+  --danger-color: #dc2626;          /* Rojo peligro */
+  --danger-hover: #b91c1c;
+  --danger-light: #fee2e2;
+  --danger-bg: rgba(220, 38, 38, 0.1);  /* Fondo rojo suave */
+  
+  /* === FONDOS MODO CLARO === */
+  --bg-primary: #ffffff;            /* Fondo principal */
+  --bg-secondary: #f8fafc;          /* Fondo alternativo */
+  --bg-tertiary: #f1f5f9;           /* Fondo terciario */
+  --bg-card: #ffffff;               /* Tarjetas productos */
+  --bg-overlay: rgba(255, 255, 255, 0.95);
+  --bg-hover: #f1f5f9;              /* Hover suave */
+  --bg-active: #e2e8f0;             /* Estado activo */
+  
+  /* === TEXTOS MODO CLARO - MÁXIMO CONTRASTE === */
+  --text-primary: #0f172a;          /* Negro principal WCAG AAA */
+  --text-secondary: #374151;        /* Gris oscuro legible */
+  --text-muted: #6b7280;            /* Gris medio para labels */
+  --text-white: #ffffff;            /* Blanco puro */
+  --text-inverse: #ffffff;          /* Texto sobre fondos oscuros */
+  --text-link: #2563eb;             /* Enlaces azul */
+  --text-price: #059669;            /* Precios verde */
+  --text-offer: #dc2626;            /* Ofertas rojo */
+  
+  /* === BORDES Y LÍNEAS === */
+  --border-color: #e5e7eb;          /* Bordes principales */
+  --border-hover: #d1d5db;          /* Bordes hover */
+  --border-focus: #2563eb;          /* Focus azul */
+  --border-light: #f3f4f6;          /* Bordes suaves */
+  
+  /* === SOMBRAS SUAVES === */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+  
+  /* === GRADIENTES E-COMMERCE === */
+  --gradient-primary: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  --gradient-success: linear-gradient(135deg, #059669 0%, #047857 100%);
+  --gradient-offer: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  --gradient-warm: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  --gradient-hero: linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #dc2626 100%);
+}
+
+/* === TEMA OSCURO E-COMMERCE === */
+[data-theme="dark"] {
+  /* === FONDOS MODO OSCURO === */
+  --bg-primary: #0f172a;            /* Fondo principal oscuro */
+  --bg-secondary: #1e293b;          /* Fondo secundario */
+  --bg-tertiary: #334155;           /* Fondo terciario */
+  --bg-card: #1e293b;               /* Tarjetas productos */
+  --bg-overlay: rgba(15, 23, 42, 0.95);
+  --bg-hover: #334155;              /* Hover sutil */
+  --bg-active: #475569;             /* Estado activo */
+  
+  /* === TEXTOS MODO OSCURO - MÁXIMO CONTRASTE === */
+  --text-primary: #f8fafc;          /* Blanco principal WCAG AAA */
+  --text-secondary: #e2e8f0;        /* Gris claro legible */
+  --text-muted: #cbd5e1;            /* Gris medio para labels */
+  --text-white: #ffffff;            /* Blanco puro */
+  --text-inverse: #0f172a;          /* Texto sobre fondos claros */
+  --text-link: #60a5fa;             /* Enlaces azul claro */
+  --text-price: #34d399;            /* Precios verde claro */
+  --text-offer: #f87171;            /* Ofertas rojo claro */
+  
+  /* === COLORES DE PELIGRO MODO OSCURO === */
+  --danger-color: #f87171;          /* Rojo peligro claro */
+  --danger-hover: #ef4444;
+  --danger-light: #fee2e2;
+  --danger-bg: rgba(248, 113, 113, 0.1);  /* Fondo rojo suave */
+  
+  /* === BORDES MODO OSCURO === */
+  --border-color: #374151;          /* Bordes principales */
+  --border-hover: #4b5563;          /* Bordes hover */
+  --border-focus: #60a5fa;          /* Focus azul claro */
+  --border-light: #374151;          /* Bordes suaves */
+  
+  /* === SOMBRAS OSCURAS === */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.7);
+  
+  /* === GRADIENTES MODO OSCURO === */
+  --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --gradient-offer: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --gradient-warm: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --gradient-card: linear-gradient(145deg, #1e293b 0%, #334155 100%);
+  --gradient-hero: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ef4444 100%);
+}
+
+/* Transiciones suaves para cambio de tema */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Clases utilitarias */
+.glass-card {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 16px;
+}
+
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+[data-theme="dark"] .shimmer {
+  background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+  background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% { transform: translate3d(0,0,0); }
+  40%, 43% { transform: translate3d(0,-10px,0); }
+  70% { transform: translate3d(0,-5px,0); }
+  90% { transform: translate3d(0,-2px,0); }
+}
+
+.fade-in { animation: fadeIn 0.6s ease-out; }
+.slide-in { animation: slideIn 0.3s ease-out; }
+.bounce { animation: bounce 0.6s ease-out; }

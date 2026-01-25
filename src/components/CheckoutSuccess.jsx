@@ -1,70 +1,72 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
+import { verifyStripePayment, PAYMENT_STATUS } from '../services/paymentService';
+import { formatPrice, pesosTocents } from '../utils/currency';
 import './CheckoutSuccess.css';
+
+// Helper function to format currency
+const formatCurrency = (pesos) => {
+  return formatPrice(pesosTocents(pesos));
+};
 
 function CheckoutSuccess() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [orderDetails, setOrderDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [processed, setProcessed] = useState(false); // Evitar múltiples ejecuciones
+  const [processed, setProcessed] = useState(false);
   const { clearCart } = useContext(CartContext);
 
   useEffect(() => {
     const sessionId = searchParams.get('session_id');
     
     const processSuccessfulPayment = async (sessionId) => {
-      if (processed) return; // Ya procesado, evitar loop
+      if (processed) return;
       
       try {
-        setProcessed(true); // Marcar como procesado
-        console.log('🔄 Procesando pago exitoso con session_id:', sessionId);
+        setProcessed(true);
+        console.log('🔄 Processing successful Stripe payment:', sessionId);
         
-        // Verificar la sesión de Stripe y crear la orden
-        console.log('📡 Enviando petición a /api/verify-payment...');
-        const response = await fetch('/api/verify-payment', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            session_id: sessionId
-          })
-        });
+        // Verify payment using payment service
+        const result = await verifyStripePayment(sessionId);
         
-        console.log('📨 Respuesta recibida:', response.status, response.statusText);
-        const result = await response.json();
-        console.log('📋 Datos de respuesta:', result);
-        
-        if (response.ok) {
-          console.log('✅ Pago verificado exitosamente');
+        if (result.success) {
+          console.log('✅ Payment verified successfully');
+          
           setOrderDetails({
-            order_number: result.order_number,
-            order_id: result.order_id,
+            order_number: result.orderNumber,
+            order_id: result.orderId,
             session_id: sessionId,
-            status: 'completed',
+            status: PAYMENT_STATUS.COMPLETED,
             payment_method: 'card',
-            message: result.message
+            message: result.message,
+            // Additional details from order
+            customer_name: result.customer_name,
+            customer_phone: result.customer_phone,
+            customer_email: result.customer_email,
+            delivery_address: result.delivery_address,
+            items: result.items || [],
+            total_amount: result.total_amount
           });
           
-          // Limpiar carrito después del pago exitoso (sin confirmación)
-          clearCart(true);
+          // Clear cart after successful payment verification
+          clearCart();
+          
         } else {
-          console.error('❌ Error en la respuesta del servidor:', result);
           throw new Error(result.error || 'Error al verificar el pago');
         }
         
       } catch (err) {
-        console.error('💥 Error al procesar pago exitoso:', err);
-        setError(`Error al procesar el pago: ${err.message}`);
+        console.error('💥 Error processing payment verification:', err);
+        setError(err.message || 'Error al procesar el pago');
       } finally {
         setLoading(false);
       }
     };
     
     if (sessionId && !processed) {
-      // Procesar el pago exitoso y crear la orden
       processSuccessfulPayment(sessionId);
     } else if (!sessionId) {
       setError('No se encontró información de la sesión de pago');
@@ -73,17 +75,8 @@ function CheckoutSuccess() {
   }, [searchParams, clearCart, processed]);
 
   const handleBackToStore = () => {
-    // Usar navigate en lugar de window.location para mejor UX
-    window.location.href = '/';
+    navigate('/');
   };
-
-  // Prevenir cualquier redirección automática durante los primeros segundos
-  useEffect(() => {
-    console.log('✅ CheckoutSuccess mounted, preventing auto-redirects');
-    return () => {
-      console.log('✅ CheckoutSuccess unmounted');
-    };
-  }, []);
 
   if (loading) {
     return (
@@ -126,18 +119,88 @@ function CheckoutSuccess() {
         <h1 className="success-title">¡Pago exitoso!</h1>
         <p className="success-subtitle">Tu pedido ha sido procesado correctamente</p>
         
-        <div className="order-details">
-          <div className="detail-item">
-            <span className="detail-label">Número de orden:</span>
-            <span className="detail-value">{orderDetails?.order_number}</span>
+        {/* Tracking Number */}
+        <div className="tracking-section">
+          <h3>Número de seguimiento</h3>
+          <div className="tracking-display">
+            <span className="tracking-code">{orderDetails?.order_number}</span>
+            <button 
+              className="copy-btn"
+              onClick={() => {
+                navigator.clipboard.writeText(orderDetails?.order_number || '');
+              }}
+              title="Copiar número"
+            >
+              📋
+            </button>
           </div>
+          <p className="tracking-note">Guarda este número para rastrear tu pedido</p>
+        </div>
+
+        {/* Customer Info */}
+        {orderDetails?.customer_name && (
+          <div className="order-section">
+            <h4>Información del cliente</h4>
+            <div className="customer-info">
+              <div className="info-row">
+                <span className="info-label">Nombre:</span>
+                <span className="info-value">{orderDetails.customer_name}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Teléfono:</span>
+                <span className="info-value">{orderDetails.customer_phone}</span>
+              </div>
+              {orderDetails.customer_email && (
+                <div className="info-row">
+                  <span className="info-label">Email:</span>
+                  <span className="info-value">{orderDetails.customer_email}</span>
+                </div>
+              )}
+              <div className="info-row">
+                <span className="info-label">Dirección:</span>
+                <span className="info-value">{orderDetails.delivery_address}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Order Summary */}
+        {orderDetails?.items && orderDetails.items.length > 0 && (
+          <div className="order-section">
+            <h4>Resumen del pedido</h4>
+            <div className="order-items">
+              {orderDetails.items.map((item, index) => (
+                <div key={index} className="order-item">
+                  <div className="item-info">
+                    <span className="item-name">{item.name || item.product_name}</span>
+                    <span className="item-details">
+                      {item.quantity} x {formatCurrency(item.unit_price)}
+                    </span>
+                  </div>
+                  <span className="item-total">
+                    {formatCurrency(item.unit_price * item.quantity)}
+                  </span>
+                </div>
+              ))}
+            </div>
+            
+            {orderDetails.total_amount && (
+              <div className="order-total">
+                <span className="total-label">Total pagado</span>
+                <span className="total-amount">{formatCurrency(orderDetails.total_amount)}</span>
+              </div>
+            )}
+          </div>
+        )}
+        
+        <div className="order-details">
           <div className="detail-item">
             <span className="detail-label">Método de pago:</span>
             <span className="detail-value">Tarjeta (Stripe)</span>
           </div>
           <div className="detail-item">
             <span className="detail-label">Estado:</span>
-            <span className="detail-value success-status">Completado</span>
+            <span className="detail-value success-status">✓ Completado</span>
           </div>
         </div>
 
@@ -147,6 +210,7 @@ function CheckoutSuccess() {
             <li>📧 Recibirás un email de confirmación</li>
             <li>📦 Prepararemos tu pedido para entrega</li>
             <li>🚚 Te contactaremos para coordinar la entrega</li>
+            <li>⏰ Tiempo estimado: 60-90 minutos</li>
           </ul>
         </div>
 

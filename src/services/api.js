@@ -70,7 +70,18 @@ export const getSuppliers = () => api.get(`${API_URL}/suppliers`);
 
 export const getBrands = () => api.get(`${API_URL}/brands`);
 
-export const createOrder = (orderData) => api.post(`${API_URL}/orders`, orderData);
+export const createOrder = async (orderData) => {
+  try {
+    const response = await api.post(`${API_URL}/orders`, orderData);
+    return response.data;
+  } catch (error) {
+    console.error('Error en createOrder API:', error);
+    if (error.response?.data) {
+      console.error('Error response data:', error.response.data);
+    }
+    throw error;
+  }
+};
 
 // Exportar el cliente api para uso directo
 export { api };

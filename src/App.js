@@ -9,7 +9,12 @@ import Register from './components/Register';
 import Navbar from './components/Navbar';
 import CheckoutSuccess from './components/CheckoutSuccess';
 import CheckoutCancel from './components/CheckoutCancel';
+import { ToastProvider } from './components/ToastProvider';
 import './App.css';
+import './styles/theme.css';
+import './styles/global.css';
+import './styles/ecommerce.css';
+import './styles/critical.css';
 
 // Componente para redirección única después del login
 const PostLoginRedirect = () => {
@@ -21,10 +26,12 @@ const PostLoginRedirect = () => {
   useEffect(() => {
     // Solo redirigir una vez cuando se autentica, pero con un pequeño delay
     // para permitir que el carrito se cargue primero
-    // NO redirigir si está en páginas de checkout
+    // NO redirigir si está en páginas de checkout, carrito, o si ya está en la página principal
     const isCheckoutPage = location.pathname.startsWith('/checkout/');
+    const isHomePage = location.pathname === '/';
+    const isCartPage = location.pathname === '/cart';
     
-    if (isAuthenticated && !hasRedirected.current && !isCheckoutPage) {
+    if (isAuthenticated && !hasRedirected.current && !isCheckoutPage && !isHomePage && !isCartPage) {
       hasRedirected.current = true;
       setTimeout(() => {
         console.log('🔄 User just logged in, redirecting to product list...');
@@ -57,78 +64,64 @@ const LogoutNavigationHandler = () => {
   return null;
 };
 
-// Variable global para evitar múltiples cargas
-let cartLoadInProgress = false;
-let cartAlreadyLoadedThisSession = false;
-
 // Componente para cargar el carrito pendiente después del login
 const PendingCartLoader = () => {
   const { user, isAuthenticated } = useAuth();
   const { combineCartWithGuest, loadCartFromDB } = useContext(CartContext);
   
   useEffect(() => {
-    if (isAuthenticated && user && !localStorage.getItem('isGuest') && !cartLoadInProgress && !cartAlreadyLoadedThisSession) {
-      const hasPendingCart = localStorage.getItem('pendingCart');
-      const hasRunCombination = localStorage.getItem('cartCombinationDone');
-      const hasLoadedUserCart = localStorage.getItem('userCartLoaded');
+    if (!isAuthenticated || !user) {
+      console.log('🔑 User not authenticated, skipping cart operations');
+      return;
+    }
+
+    const isGuest = localStorage.getItem('isGuest') === 'true';
+    const hasPendingCart = localStorage.getItem('pendingCart');
+    const hasLoadedUserCart = localStorage.getItem('userCartLoaded') === 'true';
+    
+    console.log('🔑 PendingCartLoader - User authenticated:', {
+      username: user.username,
+      isGuest,
+      hasPendingCart: !!hasPendingCart,
+      hasLoadedUserCart
+    });
+
+    if (isGuest) {
+      // Usuario invitado - no hacer nada especial con el carrito
+      console.log('🔑 Guest user - no cart operations needed');
+      return;
+    }
+
+    if (hasPendingCart && !hasLoadedUserCart) {
+      // Usuario que tenía carrito como invitado y ahora se loguea
+      console.log('🔑 Found pending cart, combining with user cart...');
       
-      console.log('🔑 User authenticated:', { 
-        user: user.username, 
-        hasPendingCart: !!hasPendingCart, 
-        hasRunCombination,
-        hasLoadedUserCart,
-        cartLoadInProgress,
-        cartAlreadyLoadedThisSession
-      });
-      
-      if (hasPendingCart && !hasRunCombination) {
-        // Caso: Usuario invitado que ahora se loguea -> combinar carritos
-        console.log('🔑 Found pending cart, combining with user cart...');
-        cartLoadInProgress = true;
-        
-        if (combineCartWithGuest) {
-          combineCartWithGuest().then(hadPendingCart => {
-            console.log('🔑 Cart combination result:', hadPendingCart);
-            localStorage.setItem('cartCombinationDone', 'true');
+      if (combineCartWithGuest) {
+        combineCartWithGuest()
+          .then((success) => {
+            console.log('🔑 Cart combination result:', success);
             localStorage.setItem('userCartLoaded', 'true');
-            cartLoadInProgress = false;
-            cartAlreadyLoadedThisSession = true;
-          }).catch(() => {
-            cartLoadInProgress = false;
+          })
+          .catch((error) => {
+            console.error('🔑 Error combining carts:', error);
           });
-        }
-      } else if (!hasLoadedUserCart && !hasRunCombination) {
-        // Caso: Login normal -> cargar carrito del usuario
-        console.log('🔑 Loading user cart from DB (first time this session)...');
-        cartLoadInProgress = true;
-        
-        if (loadCartFromDB) {
-          loadCartFromDB().then((loaded) => {
-            console.log('🔑 User cart loaded from DB:', loaded);
-            localStorage.setItem('userCartLoaded', 'true');
-            localStorage.setItem('cartCombinationDone', 'true');
-            cartLoadInProgress = false;
-            cartAlreadyLoadedThisSession = true;
-          }).catch(() => {
-            cartLoadInProgress = false;
-          });
-        }
-      } else {
-        console.log('🔑 Cart already loaded for this session, skipping...');
-        console.log('🔑 This means userCartLoaded is:', hasLoadedUserCart);
-        cartAlreadyLoadedThisSession = true;
       }
-    } else if (isAuthenticated && user && localStorage.getItem('isGuest')) {
-      // Usuario invitado - resetear variables globales
-      console.log('🔑 Guest user authenticated - resetting global cart variables');
-      cartLoadInProgress = false;
-      cartAlreadyLoadedThisSession = false;
-    } else if (!isAuthenticated) {
-      console.log('🔑 User not authenticated, clearing localStorage flags and session variables');
-      localStorage.removeItem('cartCombinationDone');
-      localStorage.removeItem('userCartLoaded');
-      cartLoadInProgress = false;
-      cartAlreadyLoadedThisSession = false;
+    } else if (!hasLoadedUserCart) {
+      // Login normal sin carrito pendiente - cargar carrito del usuario
+      console.log('🔑 Loading user cart from database...');
+      
+      if (loadCartFromDB) {
+        loadCartFromDB()
+          .then(() => {
+            console.log('🔑 User cart loaded from database');
+            localStorage.setItem('userCartLoaded', 'true');
+          })
+          .catch((error) => {
+            console.error('🔑 Error loading user cart:', error);
+          });
+      }
+    } else {
+      console.log('🔑 Cart already loaded for this session');
     }
   }, [isAuthenticated, user, combineCartWithGuest, loadCartFromDB]);
   
@@ -207,6 +200,7 @@ const AppContent = () => {
             <Route path="/checkout/cancel" element={<CheckoutCancel />} />
           </Routes>
         </div>
+        <ToastProvider />
       </Router>
     </CartProvider>
   );

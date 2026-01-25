@@ -1,0 +1,254 @@
+/* === CORRECCIONES GLOBALES DE CONTRASTE E-COMMERCE === */
+
+/* Aplicar transiciones suaves a todos los elementos */
+*, *::before, *::after {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+/* === BODY Y HTML - BASE SÓLIDA === */
+html, body {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+/* === CORRECCIÓN ESPECÍFICA TEXTO BLANCO === */
+/* Elementos que podrían tener texto blanco en modo claro */
+.text-white,
+[style*="color: white"],
+[style*="color: #ffffff"],
+[style*="color: #fff"],
+[style*="color:white"],
+[style*="color:#ffffff"],
+[style*="color:#fff"] {
+  color: var(--text-inverse) !important;
+}
+
+/* === DROPDOWN DEL USUARIO - FORZAR VISIBILIDAD === */
+.user-dropdown * {
+  color: var(--text-primary) !important;
+}
+
+.user-dropdown-header strong,
+.user-dropdown-header small,
+.dropdown-item,
+.guest-info {
+  color: var(--text-primary) !important;
+}
+
+.user-dropdown-header small {
+  color: var(--text-secondary) !important;
+}
+
+.guest-info {
+  color: var(--text-secondary) !important;
+}
+
+.logout-btn {
+  color: var(--danger-color) !important;
+}
+
+/* === OVERRIDE COLORES HARDCODEADOS === */
+[style*="color: #333"],
+[style*="color:#333"],
+.text-dark {
+  color: var(--text-primary) !important;
+}
+
+[style*="color: #666"],
+[style*="color:#666"],
+.text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+[style*="color: #999"],
+[style*="color:#999"],
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+/* === FONDOS MEJORADOS === */
+[style*="background: white"],
+[style*="background-color: white"],
+[style*="background: #ffffff"],
+[style*="background-color: #ffffff"],
+[style*="background: #fff"],
+[style*="background-color: #fff"],
+.bg-white {
+  background-color: var(--bg-card) !important;
+}
+
+[style*="background: #f8f9fa"],
+[style*="background-color: #f8f9fa"],
+.bg-light {
+  background-color: var(--bg-hover) !important;
+}
+
+/* === COLORES E-COMMERCE === */
+[style*="color: #28a745"],
+[style*="color:#28a745"],
+.text-success {
+  color: var(--text-price) !important;
+}
+
+[style*="color: #007bff"],
+[style*="color:#007bff"],
+.text-primary {
+  color: var(--text-link) !important;
+}
+
+[style*="color: #dc3545"],
+[style*="color:#dc3545"],
+.text-danger {
+  color: var(--text-offer) !important;
+}
+
+/* === COMPONENTES ESPECÍFICOS === */
+
+/* Nombres de productos */
+.carousel-product-name,
+.product-name,
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
+/* Precios */
+.carousel-product-price,
+.product-price,
+.price {
+  color: var(--text-price) !important;
+  font-weight: 700 !important;
+}
+
+/* Botones */
+button {
+  background: var(--gradient-primary) !important;
+  color: var(--text-white) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  transition: all 0.3s ease !important;
+}
+
+button:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+button.btn-success,
+.btn-success {
+  background: var(--gradient-success) !important;
+}
+
+button.btn-danger,
+.btn-danger {
+  background: var(--gradient-offer) !important;
+}
+
+/* Enlaces */
+a {
+  color: var(--text-link) !important;
+  text-decoration: none !important;
+}
+
+a:hover {
+  color: var(--primary-hover) !important;
+}
+
+/* === TARJETAS Y CONTENEDORES === */
+.carousel-product-card,
+.product-card,
+.supplier-section,
+.cart-header,
+.checkout-container,
+.card {
+  background: var(--gradient-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.carousel-product-card:hover,
+.product-card:hover {
+  box-shadow: var(--shadow-xl) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* === FORMULARIOS === */
+input, textarea, select {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--border-focus) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+  outline: none !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* === NAVBAR MEJORADA === */
+.navbar {
+  background: var(--gradient-primary) !important;
+  box-shadow: var(--shadow-lg) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.navbar * {
+  color: var(--text-white) !important;
+}
+
+/* === CART Y CARRITO === */
+.cart-button {
+  background: var(--gradient-success) !important;
+  color: var(--text-white) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.cart-count {
+  background: var(--gradient-offer) !important;
+  color: var(--text-white) !important;
+}
+
+/* === ELEMENTOS ESPECÍFICOS === */
+.qty-display,
+.quantity-selector {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+/* === OVERRIDE PARA ELEMENTOS CON ESTILOS INLINE === */
+[style*="color"] {
+  color: var(--text-primary) !important;
+}
+
+/* === SCROLLBAR PERSONALIZADA === */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-hover);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gradient-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gradient-offer);
+}

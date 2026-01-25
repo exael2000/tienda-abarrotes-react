@@ -203,10 +203,20 @@
 }
 
 .guest-description {
-  margin: 0;
+  margin: 8px 0 0 0;
   color: #666;
   font-size: 0.85rem;
   font-style: italic;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.guest-description small {
+  color: #8a8a8a;
+  font-size: 0.75rem;
+  display: block;
+  margin-top: 4px;
+  font-style: normal;
 }
 
 .demo-credentials {

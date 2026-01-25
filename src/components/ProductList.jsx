@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { getProducts } from '../services/api';
 import { formatPrice } from '../utils/currency';
-import AddToCartNotification from './AddToCartNotification';
+import { showToast } from './ToastProvider';
+import { LoadingSkeleton } from './LoadingSkeleton';
 import './ProductList.css';
 
 // Componente selector de cantidad inteligente
@@ -483,11 +484,7 @@ function ProductList() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [groupedProducts, setGroupedProducts] = useState({});
-  const [notification, setNotification] = useState({ 
-    isVisible: false, 
-    product: null, 
-    quantity: 0 
-  });
+
 
   useEffect(() => {
     getProducts()
@@ -533,30 +530,25 @@ function ProductList() {
     console.log('🛒 handleAddToCart iniciado:', { product: product.name, quantity });
     addToCart(product, quantity);
     
-    // Mostrar notificación
-    setNotification({
-      isVisible: true,
-      product: product,
-      quantity: quantity
-    });
+    // Toast notification moderno
+    showToast.addToCart(product.name);
     
     console.log(`✓ Agregado al carrito: ${quantity}x ${product.name}`);
     console.log('🛒 handleAddToCart completado');
   }, [addToCart]);
-  
-  const handleCloseNotification = () => {
-    setNotification({
-      isVisible: false,
-      product: null,
-      quantity: 0
-    });
-  };
+
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Cargando productos...</p>
+      <div className="product-list-container">
+        <div className="main-header">
+          <div className="header-content">
+            <div className="header-title">
+              <div className="shimmer" style={{ height: '40px', width: '300px', borderRadius: '8px' }}></div>
+            </div>
+          </div>
+        </div>
+        <LoadingSkeleton type="product" count={8} />
       </div>
     );
   }
@@ -610,13 +602,6 @@ function ProductList() {
         isOpen={isModalOpen}
         onClose={closeProductModal}
         onAddToCart={handleAddToCart}
-      />
-      
-      <AddToCartNotification
-        isVisible={notification.isVisible}
-        product={notification.product}
-        quantity={notification.quantity}
-        onClose={handleCloseNotification}
       />
     </div>
   );

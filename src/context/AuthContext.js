@@ -30,30 +30,58 @@ export const AuthProvider = ({ children }) => {
           setUser(guestUser);
           setToken(null);
           setIsAuthenticated(true);
+          console.log('🔑 Guest user restored:', guestUser.username);
         } else if (savedToken && savedUser) {
           // Usuario registrado - verificar que el token sea válido
-          const response = await fetch('/api/auth/profile', {
-            headers: {
-              'Authorization': `Bearer ${savedToken}`
+          try {
+            const response = await fetch('/api/auth/profile', {
+              headers: {
+                'Authorization': `Bearer ${savedToken}`
+              }
+            });
+            
+            if (response.ok) {
+              const userData = await response.json();
+              setUser(userData);
+              setToken(savedToken);
+              setIsAuthenticated(true);
+              console.log('🔑 Authenticated user restored:', userData.username);
+            } else {
+              // Token inválido, limpiar storage y mostrar como no autenticado
+              console.log('🔑 Invalid token, clearing authentication');
+              localStorage.removeItem('access_token');
+              localStorage.removeItem('user');
+              localStorage.removeItem('isGuest');
+              setUser(null);
+              setToken(null);
+              setIsAuthenticated(false);
             }
-          });
-          
-          if (response.ok) {
-            const userData = await response.json();
+          } catch (fetchError) {
+            console.error('🔑 Error validating token:', fetchError);
+            // En caso de error de red, mantener la sesión local por ahora
+            // pero en una app real deberías considerar limpiar la sesión
+            const userData = JSON.parse(savedUser);
             setUser(userData);
             setToken(savedToken);
             setIsAuthenticated(true);
-          } else {
-            // Token inválido, limpiar storage
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('user');
+            console.log('🔑 Network error, maintaining local session');
           }
+        } else {
+          // No hay datos guardados, usuario no autenticado
+          console.log('🔑 No saved authentication found');
+          setUser(null);
+          setToken(null);
+          setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Error al verificar autenticación:', error);
         // Limpiar datos en caso de error
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
+        localStorage.removeItem('isGuest');
+        setUser(null);
+        setToken(null);
+        setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
       }
@@ -108,9 +136,12 @@ export const AuthProvider = ({ children }) => {
       console.error('Error en logout:', error);
     } finally {
       // Limpiar estado local siempre
+      console.log('🔑 Logging out user:', user?.username || 'unknown');
       setUser(null);
       setToken(null);
       setIsAuthenticated(false);
+      
+      // Limpiar localStorage completamente
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
       localStorage.removeItem('isGuest');
@@ -118,11 +149,12 @@ export const AuthProvider = ({ children }) => {
       // Limpiar flags del carrito para permitir carga fresca en próximo login
       localStorage.removeItem('cartCombinationDone');
       localStorage.removeItem('userCartLoaded');
+      localStorage.removeItem('cart');
       
       // NO eliminar pendingCart aquí - puede ser necesario para combinación de carritos
       // localStorage.removeItem('pendingCart'); // Se elimina después de la combinación
       
-      console.log('🔑 Logout completed - cart flags cleared (except pendingCart)');
+      console.log('🔑 Logout completed - all data cleared');
     }
   };
 

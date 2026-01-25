@@ -1,0 +1,46 @@
+/* Estilos adicionales para toast personalizados */
+.toast-container {
+  z-index: 9999;
+}
+
+/* Animaciones personalizadas para toast */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Override estilos específicos del toast */
+.Toaster__toast {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.Toaster__toast--dismiss {
+  animation: slideOutRight 0.3s ease-in;
+}
+
+/* Toast con glass morphism */
+.glass-toast {
+  background: var(--glass-bg) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+}
