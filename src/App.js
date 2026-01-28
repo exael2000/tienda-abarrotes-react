@@ -14,6 +14,7 @@ import Login from './components/Login';
 import Navbar from './components/Navbar';
 import ProductList from './components/ProductList';
 import Register from './components/Register';
+import ScrollToTop from './components/ScrollToTop';
 import { ToastProvider } from './components/ToastProvider';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartContext, CartProvider } from './context/CartContext';
@@ -181,6 +182,7 @@ const AppContent = () => {
     <CartProvider>
       <PendingCartLoader />
       <Router>
+        <ScrollToTop />
         <PostLoginRedirect />
         <LogoutNavigationHandler />
         <Routes>

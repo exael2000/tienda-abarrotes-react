@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { useCheckoutFlow } from '../hooks/useCheckoutFlow';
@@ -47,6 +47,11 @@ function Checkout() {
     calculateTotal,
     isGuest,
   } = useCheckoutFlow(cartItems);
+
+  // Scroll to top cuando cambia el paso
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
 
   // Validate cart on mount (only for initial steps)
   React.useEffect(() => {

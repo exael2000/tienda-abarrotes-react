@@ -476,7 +476,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: white;
+  background: var(--bg-primary);
   border-radius: 20px 20px 0 0;
   box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.3);
   max-height: 90vh;
@@ -501,21 +501,21 @@
   padding: 12px 0;
   text-align: center;
   cursor: pointer;
-  background: #f8f9fa;
+  background: var(--bg-secondary);
   border-radius: 20px 20px 0 0;
 }
 
 .handle-bar {
   width: 40px;
   height: 4px;
-  background: #ddd;
+  background: var(--border-color);
   border-radius: 2px;
   margin: 0 auto;
   transition: background-color 0.2s ease;
 }
 
 .bottom-sheet-handle:hover .handle-bar {
-  background: #999;
+  background: var(--text-muted);
 }
 
 /* Cabecera compacta */
@@ -524,8 +524,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #eee;
-  background: white;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-primary);
 }
 
 .product-summary {
@@ -658,18 +658,18 @@
 }
 
 .expanded-allergens {
-  background: var(--warning-light);
+  background: rgba(251, 191, 36, 0.1);
   border: 1px solid var(--warning-color);
-  box-shadow: 0 2px 4px rgba(255, 193, 7, 0.2);
+  box-shadow: 0 2px 4px rgba(251, 191, 36, 0.2);
 }
 
 .expanded-allergens h4 {
-  color: var(--warning-hover);
+  color: var(--text-primary);
   border-bottom: 2px solid var(--warning-color);
 }
 
 .expanded-allergens p {
-  color: var(--warning-hover);
+  color: var(--text-primary);
   font-weight: 500;
 }
 
