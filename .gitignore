@@ -28,7 +28,7 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
+# build/  # Comentado - conflicto con React build/
 develop-eggs/
 dist/
 downloads/
