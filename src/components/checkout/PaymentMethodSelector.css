@@ -10,7 +10,7 @@
   position: relative;
 }
 
-.payment-method input[type="radio"] {
+.payment-method input[type='radio'] {
   position: absolute;
   opacity: 0;
   width: 0;
@@ -22,22 +22,22 @@
   align-items: center;
   gap: 16px;
   padding: 20px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   border-radius: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: white;
+  background: var(--bg-card);
 }
 
 .payment-option:hover {
-  border-color: #a0aec0;
-  background: #f7fafc;
+  border-color: var(--border-hover);
+  background: var(--bg-hover);
 }
 
-.payment-method input[type="radio"]:checked + .payment-option {
-  border-color: #2d3748;
-  background: #f7fafc;
-  box-shadow: 0 0 0 3px rgba(45, 55, 72, 0.1);
+.payment-method input[type='radio']:checked + .payment-option {
+  border-color: var(--primary-color);
+  background: var(--bg-hover);
+  box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .payment-icon {
@@ -51,14 +51,14 @@
 
 .payment-info h4 {
   margin: 0 0 4px 0;
-  color: #2d3748;
+  color: var(--text-primary);
   font-size: 16px;
   font-weight: 600;
 }
 
 .payment-info p {
   margin: 0;
-  color: #718096;
+  color: var(--text-muted);
   font-size: 14px;
 }
 
@@ -66,7 +66,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -78,9 +78,9 @@
 }
 
 .check-indicator.active {
-  background: #2d3748;
-  border-color: #2d3748;
-  color: white;
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--text-white);
 }
 
 /* Payment Note */
@@ -89,8 +89,8 @@
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
-  background: #f7fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   margin-top: 16px;
 }
@@ -102,7 +102,7 @@
 
 .payment-note p {
   margin: 0;
-  color: #718096;
+  color: var(--text-muted);
   font-size: 14px;
   line-height: 1.5;
 }

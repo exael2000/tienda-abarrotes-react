@@ -1,7 +1,7 @@
 /* Stripe Payment Component Styles */
 .stripe-form {
   padding: 20px;
-  background: #f8f9fa;
+  background: var(--bg-secondary);
   border-radius: 8px;
   margin-top: 20px;
 }
@@ -14,13 +14,13 @@
   display: block;
   margin-bottom: 10px;
   font-weight: 500;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .StripeElement {
-  background: white;
+  background: var(--bg-card);
   padding: 16px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   box-shadow: 0 1px 3px 0 #e6ebf1;
   transition: box-shadow 150ms ease;
@@ -40,12 +40,12 @@
 }
 
 .stripe-error {
-  color: #fa755a;
-  background: #fff5f5;
+  color: var(--danger-color);
+  background: var(--danger-bg);
   padding: 12px;
   border-radius: 4px;
   margin: 15px 0;
-  border-left: 4px solid #fa755a;
+  border-left: 4px solid var(--danger-color);
   font-size: 14px;
 }
 
@@ -55,8 +55,8 @@
 }
 
 .stripe-pay-button {
-  background: #007bff;
-  color: white;
+  background: var(--primary-color);
+  color: var(--text-white);
   border: none;
   padding: 16px 32px;
   border-radius: 6px;
@@ -69,13 +69,13 @@
 }
 
 .stripe-pay-button:hover:not(:disabled) {
-  background: #0056b3;
+  background: var(--primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
 }
 
 .stripe-pay-button:disabled {
-  background: #6c757d;
+  background: var(--text-muted);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -85,11 +85,11 @@
   text-align: center;
   margin-top: 15px;
   padding-top: 15px;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid var(--border-color);
 }
 
 .stripe-security p {
-  color: #666;
+  color: var(--text-muted);
   font-size: 14px;
   margin: 0;
   display: flex;
@@ -115,7 +115,7 @@
     padding: 15px;
     margin-top: 15px;
   }
-  
+
   .stripe-pay-button {
     padding: 14px 24px;
     font-size: 15px;

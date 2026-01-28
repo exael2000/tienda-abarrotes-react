@@ -15,14 +15,14 @@
 
 .cash-header h2 {
   margin: 0 0 8px 0;
-  color: #1a202c;
+  color: var(--text-primary);
   font-size: 28px;
   font-weight: 700;
 }
 
 .cash-subtitle {
   margin: 0;
-  color: #4a5568;
+  color: var(--text-secondary);
   font-size: 16px;
 }
 
@@ -30,14 +30,14 @@
 .tracking-section {
   margin-bottom: 32px;
   padding: 24px;
-  background: #f7fafc;
+  background: var(--bg-secondary);
   border-radius: 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
 }
 
 .tracking-section h3 {
   margin: 0 0 16px 0;
-  color: #1a202c;
+  color: var(--text-primary);
   font-size: 16px;
   font-weight: 600;
 }
@@ -47,8 +47,8 @@
   align-items: center;
   gap: 12px;
   padding: 12px 20px;
-  background: white;
-  border: 2px solid #e2e8f0;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   margin-bottom: 8px;
 }
@@ -56,7 +56,7 @@
 .tracking-code {
   font-size: 20px;
   font-weight: 700;
-  color: #2d3748;
+  color: var(--text-primary);
   font-family: 'Courier New', monospace;
   letter-spacing: 1px;
 }
@@ -76,7 +76,7 @@
 
 .tracking-note {
   margin: 8px 0 0 0;
-  color: #718096;
+  color: var(--text-muted);
   font-size: 13px;
 }
 
@@ -84,15 +84,15 @@
 .cash-section {
   margin-bottom: 24px;
   padding: 20px;
-  background: #f7fafc;
+  background: var(--bg-secondary);
   border-radius: 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   text-align: left;
 }
 
 .cash-section h4 {
   margin: 0 0 16px 0;
-  color: #1a202c;
+  color: var(--text-primary);
   font-size: 16px;
   font-weight: 600;
 }
@@ -111,14 +111,14 @@
 
 .info-label {
   font-weight: 600;
-  color: #718096;
+  color: var(--text-muted);
   font-size: 14px;
   min-width: 80px;
   flex-shrink: 0;
 }
 
 .info-value {
-  color: #2d3748;
+  color: var(--text-primary);
   font-size: 14px;
   word-break: break-word;
 }
@@ -136,9 +136,9 @@
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
 }
 
 .cash-item-image {
@@ -146,7 +146,7 @@
   height: 50px;
   object-fit: cover;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   flex-shrink: 0;
 }
 
@@ -159,18 +159,18 @@
 
 .cash-item-name {
   font-weight: 600;
-  color: #2d3748;
+  color: var(--text-primary);
   font-size: 14px;
 }
 
 .cash-item-details {
   font-size: 13px;
-  color: #718096;
+  color: var(--text-muted);
 }
 
 .cash-item-total {
   font-weight: 700;
-  color: #2d3748;
+  color: var(--text-primary);
   font-size: 15px;
   flex-shrink: 0;
 }

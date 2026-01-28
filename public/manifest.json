@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Tienda Abarrotes",
+  "name": "Tienda de Abarrotes Online",
+  "description": "Tu tienda de abarrotes en línea - Encuentra los mejores productos",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +21,7 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#4f46e5",
+  "background_color": "#ffffff",
+  "categories": ["shopping", "food"]
 }

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { showToast } from '../components/ToastProvider';
 
 const AuthContext = createContext();
 
@@ -23,7 +24,7 @@ export const AuthProvider = ({ children }) => {
         const savedToken = localStorage.getItem('access_token');
         const savedUser = localStorage.getItem('user');
         const isGuest = localStorage.getItem('isGuest') === 'true';
-        
+
         if (isGuest && savedUser) {
           // Usuario invitado
           const guestUser = JSON.parse(savedUser);
@@ -36,10 +37,10 @@ export const AuthProvider = ({ children }) => {
           try {
             const response = await fetch('/api/auth/profile', {
               headers: {
-                'Authorization': `Bearer ${savedToken}`
-              }
+                Authorization: `Bearer ${savedToken}`,
+              },
             });
-            
+
             if (response.ok) {
               const userData = await response.json();
               setUser(userData);
@@ -91,33 +92,42 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (userData, accessToken) => {
-    console.log('🔑 Login function called with:', { userData, accessToken: accessToken ? accessToken.substring(0, 20) + '...' : 'null' });
-    
+    console.log('🔑 Login function called with:', {
+      userData,
+      accessToken: accessToken ? accessToken.substring(0, 20) + '...' : 'null',
+    });
+
     setUser(userData);
     setToken(accessToken);
     setIsAuthenticated(true);
     localStorage.setItem('access_token', accessToken);
     localStorage.setItem('user', JSON.stringify(userData));
     localStorage.removeItem('isGuest'); // Asegurar que no esté marcado como invitado
-    
-    console.log('🔑 Token saved to localStorage:', localStorage.getItem('access_token') ? 'YES' : 'NO');
-    console.log('🔑 User saved to localStorage:', localStorage.getItem('user') ? 'YES' : 'NO');
+
+    console.log(
+      '🔑 Token saved to localStorage:',
+      localStorage.getItem('access_token') ? 'YES' : 'NO'
+    );
+    console.log(
+      '🔑 User saved to localStorage:',
+      localStorage.getItem('user') ? 'YES' : 'NO'
+    );
   };
 
-  const loginAsGuest = (guestUser) => {
+  const loginAsGuest = guestUser => {
     setUser(guestUser);
     setToken(null);
     setIsAuthenticated(true);
     localStorage.setItem('user', JSON.stringify(guestUser));
     localStorage.setItem('isGuest', 'true');
     localStorage.removeItem('access_token'); // Asegurar que no haya token
-    
+
     // Limpiar carrito anterior y flags de sesión para invitados
     localStorage.removeItem('cart');
     localStorage.removeItem('cartCombinationDone');
     localStorage.removeItem('userCartLoaded');
     localStorage.removeItem('pendingCart');
-    
+
     console.log('🔑 Guest login - cart and session flags cleared');
   };
 
@@ -128,8 +138,8 @@ export const AuthProvider = ({ children }) => {
         await fetch('/api/auth/logout', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
       }
     } catch (error) {
@@ -137,28 +147,34 @@ export const AuthProvider = ({ children }) => {
     } finally {
       // Limpiar estado local siempre
       console.log('🔑 Logging out user:', user?.username || 'unknown');
+
+      // Limpiar todas las notificaciones activas inmediatamente
+      showToast.clearAll();
+
       setUser(null);
       setToken(null);
       setIsAuthenticated(false);
-      
+
       // Limpiar localStorage completamente
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
       localStorage.removeItem('isGuest');
-      
+
       // Limpiar flags del carrito para permitir carga fresca en próximo login
       localStorage.removeItem('cartCombinationDone');
       localStorage.removeItem('userCartLoaded');
       localStorage.removeItem('cart');
-      
+
       // NO eliminar pendingCart aquí - puede ser necesario para combinación de carritos
       // localStorage.removeItem('pendingCart'); // Se elimina después de la combinación
-      
-      console.log('🔑 Logout completed - all data cleared');
+
+      console.log(
+        '🔑 Logout completed - all data cleared, notifications dismissed'
+      );
     }
   };
 
-  const updateUser = (updatedUserData) => {
+  const updateUser = updatedUserData => {
     setUser(updatedUserData);
     localStorage.setItem('user', JSON.stringify(updatedUserData));
   };
@@ -171,14 +187,10 @@ export const AuthProvider = ({ children }) => {
     login,
     loginAsGuest,
     logout,
-    updateUser
+    updateUser,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export default AuthContext;

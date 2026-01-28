@@ -2,7 +2,7 @@
 .confirmation-section {
   margin-bottom: 24px;
   padding-bottom: 24px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .confirmation-section:last-child {
@@ -13,7 +13,7 @@
 
 .confirmation-section h4 {
   margin: 0 0 16px 0;
-  color: #1a202c;
+  color: var(--text-primary);
   font-size: 16px;
   font-weight: 600;
 }
@@ -31,9 +31,9 @@
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: #f7fafc;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
 }
 
 .confirmation-item-image {
@@ -41,7 +41,7 @@
   height: 50px;
   object-fit: cover;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   flex-shrink: 0;
 }
 
@@ -54,18 +54,18 @@
 
 .confirmation-item-name {
   font-weight: 600;
-  color: #2d3748;
+  color: var(--text-primary);
   font-size: 14px;
 }
 
 .confirmation-item-details {
   font-size: 13px;
-  color: #718096;
+  color: var(--text-muted);
 }
 
 .confirmation-item-total {
   font-weight: 700;
-  color: #2d3748;
+  color: var(--text-primary);
   font-size: 15px;
   flex-shrink: 0;
 }
@@ -76,21 +76,21 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background: #f0fff4;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  border: 2px solid #2f855a;
+  border: 2px solid var(--border-color);
 }
 
 .total-label {
   font-size: 18px;
   font-weight: 600;
-  color: #1a202c;
+  color: var(--text-primary);
 }
 
 .total-amount {
   font-size: 24px;
   font-weight: 700;
-  color: #2f855a;
+  color: var(--text-primary);
 }
 
 /* Confirmation Details */
@@ -107,14 +107,14 @@
 
 .detail-label {
   font-weight: 600;
-  color: #718096;
+  color: var(--text-muted);
   font-size: 14px;
   min-width: 80px;
   flex-shrink: 0;
 }
 
 .detail-value {
-  color: #2d3748;
+  color: var(--text-primary);
   font-size: 14px;
   word-break: break-word;
 }
@@ -125,9 +125,9 @@
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background: #f7fafc;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
 }
 
 .payment-icon {
@@ -138,7 +138,7 @@
 .payment-text {
   font-size: 15px;
   font-weight: 600;
-  color: #2d3748;
+  color: var(--text-primary);
 }
 
 /* Responsive */

@@ -1,4 +1,3 @@
-import React from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import './ToastProvider.css';
 
@@ -48,66 +47,65 @@ export const ToastProvider = () => {
           },
         },
       }}
-      limit={3}
+      limit={6}
     />
   );
 };
 
 // Funciones helper para toast
 export const showToast = {
-  success: (message, options = {}) => toast.success(message, {
-    duration: 3000,
-    ...options
-  }),
-  
-  error: (message, options = {}) => toast.error(message, {
-    duration: 5000,
-    ...options
-  }),
-  
-  loading: (message) => toast.loading(message),
-  
-  promise: (promise, messages) => toast.promise(promise, {
-    loading: messages.loading || 'Cargando...',
-    success: messages.success || '¡Éxito!',
-    error: messages.error || 'Error',
-  }),
-  
-  custom: (message, icon = '🔔', options = {}) => toast(message, {
-    icon: icon,
-    duration: 4000,
-    ...options
-  }),
-  
-  addToCart: (productName) => toast.success(
-    `${productName} agregado al carrito`,
-    {
+  success: (message, options = {}) =>
+    toast.success(message, {
+      duration: 3000,
+      ...options,
+    }),
+
+  error: (message, options = {}) =>
+    toast.error(message, {
+      duration: 5000,
+      ...options,
+    }),
+
+  loading: message => toast.loading(message),
+
+  promise: (promise, messages) =>
+    toast.promise(promise, {
+      loading: messages.loading || 'Cargando...',
+      success: messages.success || '¡Éxito!',
+      error: messages.error || 'Error',
+    }),
+
+  custom: (message, icon = '🔔', options = {}) =>
+    toast(message, {
+      icon: icon,
+      duration: 4000,
+      ...options,
+    }),
+
+  addToCart: productName =>
+    toast.success(`${productName} agregado al carrito`, {
       icon: '🛒',
       duration: 2000,
       style: {
         background: 'var(--secondary-color)',
         color: 'white',
         border: 'none',
-      }
-    }
-  ),
-  
-  removeFromCart: (productName) => toast(
-    `${productName} eliminado del carrito`,
-    {
+      },
+    }),
+
+  removeFromCart: productName =>
+    toast(`${productName} eliminado del carrito`, {
       icon: '🗑️',
       duration: 2000,
       style: {
         background: 'var(--accent-color)',
         color: 'white',
         border: 'none',
-      }
-    }
-  ),
-  
-  orderSuccess: (orderNumber) => toast.success(
-    `¡Pedido #${orderNumber} creado exitosamente!`,
-    {
+      },
+    }),
+
+  orderSuccess: orderNumber =>
+    toast.success(`¡Pedido #${orderNumber} creado exitosamente!`, {
       icon: '🎉',
       duration: 6000,
       style: {
@@ -116,7 +114,9 @@ export const showToast = {
         border: 'none',
         fontSize: '16px',
         padding: '16px 20px',
-      }
-    }
-  )
+      },
+    }),
+
+  // Limpiar todos los toasts activos (útil al cerrar sesión)
+  clearAll: () => toast.dismiss(),
 };

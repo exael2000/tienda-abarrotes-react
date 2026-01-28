@@ -1,20 +1,20 @@
 /* Customer Info Form */
 .checkout-step {
   margin-bottom: 32px;
-  background: white;
+  background: var(--bg-card);
   border-radius: 20px;
   padding: 28px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .checkout-step h3 {
   margin: 0 0 24px 0;
-  color: #1a202c;
+  color: var(--text-primary);
   font-size: 20px;
   font-weight: 600;
   padding-bottom: 12px;
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 2px solid var(--border-color);
 }
 
 /* Guest Info Banner */
@@ -23,8 +23,8 @@
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background: #f7fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   margin-bottom: 24px;
 }
@@ -36,14 +36,14 @@
 
 .guest-text strong {
   display: block;
-  color: #2d3748;
+  color: var(--text-primary);
   font-size: 15px;
   margin-bottom: 4px;
 }
 
 .guest-text p {
   margin: 0;
-  color: #718096;
+  color: var(--text-muted);
   font-size: 13px;
 }
 
@@ -56,38 +56,38 @@
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  color: #2d3748;
+  color: var(--text-primary);
   font-size: 14px;
 }
 
 .form-group .required {
-  color: #e53e3e;
+  color: var(--danger-color);
 }
 
 .form-group input,
 .form-group textarea {
   width: 100%;
   padding: 14px 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   font-size: 16px;
   transition: all 0.2s ease;
   box-sizing: border-box;
-  background: white;
-  color: #2d3748;
+  background: var(--bg-card);
+  color: var(--text-primary);
   font-family: inherit;
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #4299e1;
-  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .form-group input.error,
 .form-group textarea.error {
-  border-color: #e53e3e;
+  border-color: var(--danger-color);
 }
 
 .form-group textarea {
@@ -96,7 +96,7 @@
 }
 
 .error-text {
-  color: #e53e3e;
+  color: var(--danger-color);
   font-size: 13px;
   margin-top: 6px;
   display: block;

@@ -1,27 +1,38 @@
-import React from 'react';
 import './OrderConfirmation.css';
 
-function OrderConfirmation({ cartItems, formData, paymentMethod, total, formatCurrency }) {
+function OrderConfirmation({
+  cartItems,
+  formData,
+  paymentMethod,
+  total,
+  formatCurrency,
+}) {
   return (
     <div className="checkout-step">
       <h3>✅ Confirmar pedido</h3>
 
-      {/* Resumen de productos */}
+      {/* Productos */}
       <div className="confirmation-section">
         <h4>Productos</h4>
         <div className="confirmation-items">
           {cartItems.map(item => {
-            const itemPrice = item.price_cents ? item.price_cents / 100 : item.price;
-            const itemImage = item.image_url || (item.image ? `/images/products/${item.image}` : '/images/products/placeholder.svg');
+            const itemPrice = item.price_cents
+              ? item.price_cents / 100
+              : item.price;
+            const itemImage =
+              item.image_url ||
+              (item.image
+                ? `/images/products/${item.image}`
+                : '/images/products/placeholder.svg');
             const itemName = item.name || 'Producto sin nombre';
-            
+
             return (
               <div key={item.id} className="confirmation-item">
-                <img 
-                  src={itemImage} 
+                <img
+                  src={itemImage}
                   alt={itemName}
                   className="confirmation-item-image"
-                  onError={(e) => {
+                  onError={e => {
                     e.target.src = '/images/products/placeholder.svg';
                   }}
                 />
@@ -38,9 +49,12 @@ function OrderConfirmation({ cartItems, formData, paymentMethod, total, formatCu
             );
           })}
         </div>
-        
+      </div>
+
+      {/* Total a pagar */}
+      <div className="confirmation-section">
         <div className="confirmation-total">
-          <span className="total-label">Total</span>
+          <span className="total-label">Total a pagar</span>
           <span className="total-amount">{formatCurrency(total)}</span>
         </div>
       </div>
@@ -84,7 +98,9 @@ function OrderConfirmation({ cartItems, formData, paymentMethod, total, formatCu
             {paymentMethod === 'cash' ? '💵' : '💳'}
           </span>
           <span className="payment-text">
-            {paymentMethod === 'cash' ? 'Pago en efectivo' : 'Tarjeta de crédito/débito'}
+            {paymentMethod === 'cash'
+              ? 'Pago en efectivo'
+              : 'Tarjeta de crédito/débito'}
           </span>
         </div>
       </div>

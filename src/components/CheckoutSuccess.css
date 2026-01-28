@@ -4,12 +4,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-hero);
   padding: 2rem;
 }
 
 .success-content {
-  background: white;
+  background: var(--bg-card);
   border-radius: 20px;
   padding: 3rem;
   max-width: 700px;
@@ -26,7 +26,7 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  background: var(--gradient-success);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -67,20 +67,20 @@
 }
 
 .success-title {
-  color: #2c3e50;
+  color: var(--text-primary);
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
   font-weight: 700;
 }
 
 .success-subtitle {
-  color: #7f8c8d;
+  color: var(--text-secondary);
   font-size: 1.2rem;
   margin-bottom: 2rem;
 }
 
 .order-details {
-  background: #f8f9fa;
+  background: var(--bg-secondary);
   border-radius: 10px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -93,7 +93,7 @@
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .detail-item:last-child {
@@ -103,21 +103,21 @@
 
 .detail-label {
   font-weight: 600;
-  color: #495057;
+  color: var(--text-secondary);
 }
 
 .detail-value {
-  color: #212529;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
 .success-status {
-  color: #28a745;
+  color: var(--success-color);
   font-weight: 700;
 }
 
 .success-message {
-  background: #e8f5e8;
+  background: var(--success-light);
   border-radius: 10px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -125,7 +125,7 @@
 }
 
 .success-message h3 {
-  color: #2c3e50;
+  color: var(--text-primary);
   margin-bottom: 1rem;
   font-size: 1.3rem;
 }
@@ -138,7 +138,7 @@
 
 .success-message li {
   margin-bottom: 0.8rem;
-  color: #495057;
+  color: var(--text-secondary);
   font-size: 1rem;
 }
 
@@ -147,8 +147,8 @@
 }
 
 .finish-order-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--gradient-primary);
+  color: var(--text-white);
   border: none;
   padding: 1rem 2rem;
   border-radius: 50px;
@@ -177,28 +177,32 @@
 .simple-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #e2e8f0;
-  border-top: 3px solid #667eea;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--primary-color);
   border-radius: 50%;
   animation: smoothSpin 0.8s linear infinite;
 }
 
 .loading-content h3 {
-  color: #2d3748;
+  color: var(--text-primary);
   font-size: 1.5rem;
   margin: 0.5rem 0;
   font-weight: 600;
 }
 
 .loading-content p {
-  color: #718096;
+  color: var(--text-secondary);
   font-size: 1rem;
   margin: 0;
 }
 
 @keyframes smoothSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Mantener el spinner anterior para compatibilidad */
@@ -212,15 +216,19 @@
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #667eea;
+  border: 4px solid var(--border-light);
+  border-top: 4px solid var(--primary-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-content {
@@ -235,14 +243,14 @@
 
 /* Tracking Section */
 .tracking-section {
-  background: #f8f9fa;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 1.5rem;
   margin: 2rem 0;
 }
 
 .tracking-section h3 {
-  color: #2c3e50;
+  color: var(--text-primary);
   font-size: 1.1rem;
   margin-bottom: 1rem;
 }
@@ -253,7 +261,7 @@
   justify-content: center;
   gap: 0.5rem;
   background: white;
-  border: 2px solid #4CAF50;
+  border: 2px solid #4caf50;
   border-radius: 8px;
   padding: 1rem;
 }
@@ -262,7 +270,7 @@
   font-family: 'Courier New', monospace;
   font-size: 1.3rem;
   font-weight: bold;
-  color: #4CAF50;
+  color: #4caf50;
 }
 
 .copy-btn {
@@ -286,7 +294,7 @@
 
 /* Order Section */
 .order-section {
-  background: #f8f9fa;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 1.5rem;
   margin: 1.5rem 0;
@@ -294,7 +302,7 @@
 }
 
 .order-section h4 {
-  color: #2c3e50;
+  color: var(--text-primary);
   font-size: 1.1rem;
   margin-bottom: 1rem;
   text-align: center;
@@ -310,17 +318,17 @@
   display: flex;
   justify-content: space-between;
   padding: 0.5rem;
-  background: white;
+  background: var(--bg-card);
   border-radius: 6px;
 }
 
 .info-label {
-  color: #7f8c8d;
+  color: var(--text-secondary);
   font-weight: 600;
 }
 
 .info-value {
-  color: #2c3e50;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -336,7 +344,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem;
-  background: white;
+  background: var(--bg-card);
   border-radius: 6px;
 }
 
@@ -348,7 +356,7 @@
 }
 
 .item-name {
-  color: #2c3e50;
+  color: var(--text-primary);
   font-weight: 600;
   font-size: 1rem;
 }
@@ -359,7 +367,7 @@
 }
 
 .item-total {
-  color: #4CAF50;
+  color: #4caf50;
   font-weight: bold;
   font-size: 1.1rem;
 }
@@ -392,15 +400,15 @@
   .checkout-success-container {
     padding: 1rem;
   }
-  
+
   .success-content {
     padding: 2rem;
   }
-  
+
   .success-title {
     font-size: 2rem;
   }
-  
+
   .success-subtitle {
     font-size: 1rem;
   }
