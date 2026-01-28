@@ -1,9 +1,11 @@
 import React, { useContext, useState, useCallback, memo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { CartContext } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { formatPrice } from '../utils/currency';
-import Checkout from './Checkout';
+import { showToast } from './ToastProvider';
+import Checkout from './Checkout_new';
 import './Cart.css';
 import './ProductList.css'; // Importar estilos del ProductList para el bottom sheet
 
@@ -167,16 +169,16 @@ function Cart() {
   const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
 
-  // Ordenar items del carrito para asegurar consistencia visual
-  const sortedCartItems = [...cartItems].sort((a, b) => {
-    if (a.order && b.order) {
-      return a.order - b.order;
-    }
-    if (a.addedAt && b.addedAt) {
-      return a.addedAt - b.addedAt;
-    }
-    return a.id - b.id;
-  });
+  // Handlers con notificaciones toast
+  const handleUpdateQuantity = useCallback((itemId, newQuantity, itemName) => {
+    updateQuantity(itemId, newQuantity);
+    showToast.custom(`Cantidad actualizada: ${itemName}`, '📝', { duration: 2000 });
+  }, [updateQuantity]);
+
+  const handleRemoveFromCart = useCallback((itemId, itemName) => {
+    removeFromCart(itemId);
+    showToast.removeFromCart(itemName);
+  }, [removeFromCart]);
 
   const handleProductClick = useCallback((product) => {
     setSelectedProduct(product);
@@ -194,18 +196,6 @@ function Cart() {
     setShowCheckout(true);
   }, [user]);
 
-  const handleCheckoutSuccess = useCallback((result) => {
-    setShowCheckout(false);
-    // Quitar alert molesto - la información ya se mostró en la página de confirmación
-    // alert(`¡Orden completada exitosamente! Número de orden: ${result.order_number}`);
-    // Opcional: navegar a una página de confirmación
-    // navigate('/orders');
-  }, []);
-
-  const handleCheckoutCancel = useCallback(() => {
-    setShowCheckout(false);
-  }, []);
-
   const handleGoToRegister = useCallback(() => {
     console.log('🔑 handleGoToRegister called - saving cart for later combination');
     console.log('🔑 Current cart items:', cartItems.length, cartItems);
@@ -220,14 +210,11 @@ function Cart() {
     localStorage.setItem('wantsToRegister', 'true');
     console.log('🔑 Set wantsToRegister=true, going to logout and redirect to register');
     
-    // Verificar que se guardó correctamente
-    const saved = localStorage.getItem('wantsToRegister');
-    console.log('🔑 Verification - wantsToRegister saved as:', saved);
-    
-    // Hacer logout para que regrese a la pantalla de auth
+    // Hacer logout para limpiar la sesión de invitado
     logout();
-    // Redirigir a la página principal
-    navigate('/');
+    
+    // Redirigir a la página de registro
+    navigate('/register');
   }, [cartItems, logout, navigate]);
 
   const handleGoToLogin = useCallback(() => {
@@ -250,14 +237,22 @@ function Cart() {
     navigate('/');
   }, [cartItems, logout, navigate]);
 
+  // Ordenar items del carrito para asegurar consistencia visual
+  const sortedCartItems = React.useMemo(() => {
+    return [...cartItems].sort((a, b) => {
+      if (a.order && b.order) {
+        return a.order - b.order;
+      }
+      if (a.addedAt && b.addedAt) {
+        return a.addedAt - b.addedAt;
+      }
+      return a.id - b.id;
+    });
+  }, [cartItems]);
+
   // Si se está mostrando el checkout, renderizar el componente Checkout
   if (showCheckout) {
-    return (
-      <Checkout 
-        onSuccess={handleCheckoutSuccess}
-        onCancel={handleCheckoutCancel}
-      />
-    );
+    return <Checkout />;
   }
 
   // Solo mostrar carrito vacío si NO estamos en checkout
@@ -315,21 +310,25 @@ function Cart() {
               
               <div className="cart-item-controls">
                 <div className="quantity-controls">
-                  <button 
+                  <motion.button 
                     className="qty-btn"
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    onClick={() => handleUpdateQuantity(item.id, item.quantity - 1, item.name)}
                     disabled={item.quantity <= 1}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                   >
                     -
-                  </button>
+                  </motion.button>
                   <span className="quantity">{item.quantity}</span>
-                  <button 
+                  <motion.button 
                     className="qty-btn"
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    onClick={() => handleUpdateQuantity(item.id, item.quantity + 1, item.name)}
                     disabled={item.quantity >= item.stock}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                   >
                     +
-                  </button>
+                  </motion.button>
                 </div>
                 
                 <div className="cart-item-price">
@@ -337,13 +336,15 @@ function Cart() {
                   <span className="total-price">{formatPrice(item.price_cents * item.quantity)}</span>
                 </div>
                 
-                <button 
+                <motion.button 
                   className="btn-remove"
-                  onClick={() => removeFromCart(item.id)}
+                  onClick={() => handleRemoveFromCart(item.id, item.name)}
                   title="Eliminar del carrito"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  whileTap={{ scale: 0.9 }}
                 >
                   🗑️
-                </button>
+                </motion.button>
               </div>
             </div>
           ))}

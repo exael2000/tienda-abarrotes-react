@@ -1,0 +1,208 @@
+/* === CORRECCIONES ESPECÍFICAS DE CONTRASTE === */
+
+/* Forzar colores correctos en elementos problemáticos */
+
+/* === TEXTO BLANCO EN MODO CLARO - CORRECCIÓN CRÍTICA === */
+.navbar .navbar-brand,
+.navbar .nav-link,
+.navbar .navbar-text,
+.navbar button,
+.navbar-light .navbar-brand,
+.navbar-light .nav-link {
+  color: var(--text-white) !important;
+}
+
+/* === BOTONES CON GRADIENTES === */
+.btn-primary,
+button.primary,
+.primary-button {
+  background: var(--gradient-primary) !important;
+  color: var(--text-white) !important;
+  border: none !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.btn-success,
+button.success,
+.success-button,
+.cart-button {
+  background: var(--gradient-success) !important;
+  color: var(--text-white) !important;
+  border: none !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.btn-danger,
+button.danger,
+.danger-button {
+  background: var(--gradient-offer) !important;
+  color: var(--text-white) !important;
+  border: none !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* === PRECIOS CON COLOR VERDE === */
+.price,
+.product-price,
+.carousel-product-price,
+.cart-total,
+.checkout-total {
+  color: var(--text-price) !important;
+  font-weight: 700 !important;
+  font-size: 1.1em !important;
+}
+
+/* === OFERTAS Y DESCUENTOS EN ROJO === */
+.offer,
+.discount,
+.sale-price {
+  color: var(--text-offer) !important;
+  font-weight: 700 !important;
+}
+
+/* === TARJETAS CON GRADIENTE SUTIL === */
+.product-card,
+.carousel-product-card {
+  background: var(--gradient-card) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-md) !important;
+  transition: all 0.3s ease !important;
+}
+
+.product-card:hover,
+.carousel-product-card:hover {
+  box-shadow: var(--shadow-xl) !important;
+  transform: translateY(-3px) !important;
+}
+
+/* === NAVBAR CON GRADIENTE ATRACTIVO === */
+.navbar {
+  background: var(--gradient-hero) !important;
+  box-shadow: var(--shadow-lg) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+}
+
+/* === THEME TOGGLE BUTTON === */
+.theme-toggle {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: var(--text-white) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+/* === CANTIDAD Y CONTROLES === */
+.qty-display,
+.quantity-controls {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  border-radius: 6px !important;
+}
+
+/* === ELEMENTOS DE ENTRADA === */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 6px !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--border-focus) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* === TOOLTIPS Y OVERLAYS === */
+.tooltip,
+.popover,
+.dropdown-menu {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* === CORRECCIÓN PARA ICONOS === */
+.fa, .fas, .far, .fal, .fab,
+.icon, .material-icons {
+  color: inherit !important;
+}
+
+/* === ENLACES === */
+a:not(.btn):not(.navbar-brand) {
+  color: var(--text-link) !important;
+  text-decoration: none !important;
+}
+
+a:not(.btn):not(.navbar-brand):hover {
+  color: var(--primary-hover) !important;
+  text-decoration: underline !important;
+}
+
+/* === CONTADORES Y BADGES === */
+.badge,
+.counter,
+.cart-count {
+  background: var(--gradient-offer) !important;
+  color: var(--text-white) !important;
+  font-weight: 600 !important;
+  border-radius: 12px !important;
+  font-size: 0.8em !important;
+}
+
+/* === ANIMACIONES SUAVES === */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.pulse-animation {
+  animation: pulse 2s infinite;
+}
+
+/* === MODO DARK ESPECÍFICO === */
+[data-theme="dark"] {
+  /* Asegurar que todos los textos sean visibles en modo oscuro */
+  color-scheme: dark;
+}
+
+[data-theme="dark"] .text-white,
+[data-theme="dark"] [style*="color: white"] {
+  color: var(--text-primary) !important;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0.5rem 1rem !important;
+  }
+  
+  .product-card,
+  .carousel-product-card {
+    margin-bottom: 1rem !important;
+  }
+  
+  .price,
+  .product-price {
+    font-size: 1rem !important;
+  }
+}

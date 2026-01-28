@@ -19,6 +19,8 @@ const Login = ({ onLogin, onSwitchToRegister, onGuestAccess }) => {
   };
 
   const handleGuestAccess = () => {
+    console.log('🔑 Guest access initiated');
+    
     // Crear un usuario invitado temporal
     const guestUser = {
       id: 'guest',
@@ -29,9 +31,7 @@ const Login = ({ onLogin, onSwitchToRegister, onGuestAccess }) => {
       isGuest: true
     };
     
-    // Guardar información del invitado
-    localStorage.setItem('user', JSON.stringify(guestUser));
-    localStorage.setItem('isGuest', 'true');
+    console.log('🔑 Created guest user:', guestUser);
     
     // Llamar callback de acceso como invitado
     if (onGuestAccess) {
@@ -39,6 +39,8 @@ const Login = ({ onLogin, onSwitchToRegister, onGuestAccess }) => {
     } else {
       onLogin(guestUser, null);
     }
+    
+    console.log('🔑 Guest access completed');
   };
 
   const handleSubmit = async (e) => {
@@ -46,29 +48,50 @@ const Login = ({ onLogin, onSwitchToRegister, onGuestAccess }) => {
     setIsLoading(true);
     setError('');
 
+    // Validaciones básicas
+    if (!formData.username.trim()) {
+      setError('Por favor ingresa tu usuario');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!formData.password) {
+      setError('Por favor ingresa tu contraseña');
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      console.log('🔑 Attempting login for user:', formData.username);
+      
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          username: formData.username.trim(),
+          password: formData.password
+        })
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Guardar token en localStorage
-        localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        console.log('🔑 Login successful for:', data.user.username);
         
         // Llamar callback de login exitoso
         onLogin(data.user, data.access_token);
+        
+        // Limpiar formulario
+        setFormData({ username: '', password: '' });
       } else {
+        console.log('🔑 Login failed:', data.error);
         setError(data.error || 'Error en el login');
       }
     } catch (error) {
-      setError('Error de conexión. Inténtalo de nuevo.');
+      console.error('🔑 Network error during login:', error);
+      setError('Error de conexión. Verifica tu internet e inténtalo de nuevo.');
     } finally {
       setIsLoading(false);
     }
@@ -138,11 +161,13 @@ const Login = ({ onLogin, onSwitchToRegister, onGuestAccess }) => {
             type="button" 
             className="guest-btn"
             onClick={handleGuestAccess}
+            disabled={isLoading}
           >
             🚪 Acceder como Invitado
           </button>
           <p className="guest-description">
-            Navega y arma tu carrito sin necesidad de registrarte
+            Navega y arma tu carrito sin necesidad de registrarte.
+            <br /><small>Podrás registrarte más tarde para finalizar tu compra.</small>
           </p>
         </div>
 

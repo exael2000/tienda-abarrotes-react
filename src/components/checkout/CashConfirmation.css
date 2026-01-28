@@ -1,0 +1,279 @@
+/* Cash Confirmation */
+.checkout-step {
+  margin-bottom: 32px;
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 28px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.cash-confirmation {
+  text-align: center;
+}
+
+/* Cash Header */
+.cash-header {
+  margin-bottom: 32px;
+}
+
+.cash-icon-large {
+  font-size: 4rem;
+  margin-bottom: 16px;
+}
+
+.cash-header h2 {
+  margin: 0 0 8px 0;
+  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.cash-subtitle {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+/* Tracking Section */
+.tracking-section {
+  margin-bottom: 32px;
+  padding: 24px;
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.tracking-section h3 {
+  margin: 0 0 16px 0;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.tracking-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: rgba(96, 165, 250, 0.15);
+  border: 2px solid #60a5fa;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.tracking-code {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+}
+
+.copy-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+  transition: transform 0.2s ease;
+}
+
+.copy-btn:hover {
+  transform: scale(1.2);
+}
+
+.tracking-note {
+  margin: 8px 0 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* Cash Sections */
+.cash-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  text-align: left;
+}
+
+.cash-section h4 {
+  margin: 0 0 16px 0;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Customer Info */
+.customer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-row {
+  display: flex;
+  gap: 8px;
+}
+
+.info-label {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 14px;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.info-value {
+  color: var(--text-primary);
+  font-size: 14px;
+  word-break: break-word;
+}
+
+/* Cash Items */
+.cash-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cash-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.cash-item-image {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.cash-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cash-item-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.cash-item-details {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.cash-item-total {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+/* Cash Total */
+.cash-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 2px solid var(--success-color);
+}
+
+.total-label {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.total-amount {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--success-color);
+}
+
+/* Instructions */
+.instructions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.instruction {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.instruction-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.instruction-text strong {
+  display: block;
+  color: #2d3748;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.instruction-text p {
+  margin: 0;
+  color: #718096;
+  font-size: 13px;
+}
+
+/* Cash Footer */
+.cash-footer {
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.cash-footer p {
+  margin: 0 0 16px 0;
+  color: #718096;
+  font-size: 15px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cash-header h2 {
+    font-size: 24px;
+  }
+
+  .cash-icon-large {
+    font-size: 3rem;
+  }
+
+  .tracking-code {
+    font-size: 16px;
+  }
+
+  .cash-section {
+    padding: 16px;
+  }
+
+  .info-label {
+    min-width: 70px;
+    font-size: 13px;
+  }
+
+  .info-value {
+    font-size: 13px;
+  }
+}

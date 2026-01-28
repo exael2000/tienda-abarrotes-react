@@ -1,10 +1,15 @@
-/* Navbar.css */
+/* Navbar.css - Modernizado con variables CSS */
 .navbar {
   position: sticky;
   top: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: var(--bg-card);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
   z-index: 1000;
+  transition: all 0.3s ease;
 }
 
 .navbar-container {
@@ -14,26 +19,45 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 60px;
+  height: 70px;
+}
+
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: white;
-  font-weight: bold;
-  font-size: 1.2rem;
+  gap: 12px;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.navbar-brand:hover {
+  transform: translateY(-1px);
 }
 
 .store-icon {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
+  transition: transform 0.3s ease;
 }
 
 .store-name {
-  font-size: 1.1rem;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
+/* User Section */
 .navbar-user {
   position: relative;
 }
@@ -47,7 +71,7 @@
   border-radius: 25px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: white;
+  color: var(--text-white);
 }
 
 .user-info:hover {
@@ -100,12 +124,15 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  background: white;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
   min-width: 220px;
   overflow: hidden;
   animation: dropdownFadeIn 0.2s ease;
+  z-index: 1000;
 }
 
 @keyframes dropdownFadeIn {
@@ -121,25 +148,29 @@
 
 .user-dropdown-header {
   padding: 16px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .user-dropdown-header strong {
   display: block;
-  color: #333;
+  color: var(--text-primary) !important;
   font-size: 0.95rem;
+  font-weight: 600 !important;
   margin-bottom: 4px;
+  line-height: 1.2;
 }
 
 .user-dropdown-header small {
-  color: #666;
+  color: var(--text-secondary) !important;
   font-size: 0.8rem;
+  line-height: 1.2;
 }
 
 .user-dropdown-divider {
   height: 1px;
-  background: #e9ecef;
+  background: var(--border-color);
+  margin: 0;
 }
 
 .guest-info {
@@ -147,12 +178,13 @@
   align-items: flex-start;
   gap: 8px;
   padding: 12px 16px;
-  background: #f8f9fa;
-  color: #6c757d;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
   font-size: 0.8rem;
   line-height: 1.3;
   border-radius: 6px;
   margin: 8px;
+  border: 1px solid var(--border-color);
 }
 
 .guest-icon {
@@ -169,22 +201,29 @@
   border: none;
   background: none;
   text-align: left;
-  color: #333;
+  color: var(--text-primary) !important;
   font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
+  border-radius: 0;
 }
 
 .dropdown-item:hover {
-  background: #f8f9fa;
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  transform: translateX(2px);
 }
 
 .logout-btn {
-  color: #dc3545;
+  color: var(--danger-color) !important;
+  font-weight: 600 !important;
 }
 
 .logout-btn:hover {
-  background: #fff5f5;
+  background: var(--danger-bg) !important;
+  color: var(--danger-color) !important;
+  transform: translateX(2px);
 }
 
 .logout-icon {
@@ -233,4 +272,43 @@
     right: -10px;
     min-width: 180px;
   }
+}
+
+/* === OVERRIDES DE EMERGENCIA PARA DROPDOWN === */
+/* Forzar visibilidad del dropdown en todos los modos */
+.navbar .user-dropdown {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.navbar .user-dropdown * {
+  color: var(--text-primary) !important;
+}
+
+.navbar .user-dropdown-header {
+  background: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.navbar .user-dropdown-header strong {
+  color: var(--text-primary) !important;
+}
+
+.navbar .user-dropdown-header small {
+  color: var(--text-secondary) !important;
+}
+
+.navbar .dropdown-item {
+  color: var(--text-primary) !important;
+}
+
+.navbar .guest-info {
+  background: var(--bg-secondary) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.navbar .logout-btn {
+  color: var(--danger-color) !important;
 }

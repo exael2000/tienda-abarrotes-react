@@ -1,0 +1,122 @@
+/* === CORRECCIÓN CRÍTICA DE CONTRASTE === */
+/* Este archivo corrige los problemas más serios de visibilidad */
+
+/* Modo claro - texto debe ser oscuro */
+:root:not([data-theme="dark"]) {
+  /* Forzar textos oscuros en modo claro */
+  --critical-text: #111827 !important;
+  --critical-secondary: #374151 !important;
+  --critical-bg: #ffffff !important;
+}
+
+/* Modo oscuro - texto debe ser claro */
+[data-theme="dark"] {
+  /* Forzar textos claros en modo oscuro */
+  --critical-text: #f9fafb !important;
+  --critical-secondary: #e5e7eb !important;
+  --critical-bg: #1f2937 !important;
+}
+
+/* === APLICAR CORRECCIONES CRÍTICAS === */
+
+/* Todos los textos principales */
+body, html,
+p, span, div, h1, h2, h3, h4, h5, h6,
+.text, .title, .subtitle,
+.product-name, .carousel-product-name {
+  color: var(--critical-text) !important;
+}
+
+/* Textos secundarios */
+.text-secondary, .secondary-text,
+.description, .subtitle {
+  color: var(--critical-secondary) !important;
+}
+
+/* Fondos principales */
+body, html,
+.bg-white, .bg-primary,
+.card, .product-card, .carousel-product-card {
+  background-color: var(--critical-bg) !important;
+}
+
+/* === NAVBAR ESPECÍFICO === */
+.navbar {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #dc2626 100%) !important;
+}
+
+.navbar *, 
+.navbar .navbar-brand,
+.navbar .nav-link,
+.navbar button {
+  color: #ffffff !important;
+}
+
+/* === BOTONES === */
+button {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+.btn-success, .cart-button {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  color: #ffffff !important;
+}
+
+/* === PRECIOS === */
+.price, .product-price, .carousel-product-price {
+  color: #059669 !important;
+  font-weight: 700 !important;
+}
+
+/* === FORMULARIOS === */
+input, textarea, select {
+  background: var(--critical-bg) !important;
+  color: var(--critical-text) !important;
+  border: 1px solid #d1d5db !important;
+}
+
+/* === MODO OSCURO ESPECÍFICO === */
+[data-theme="dark"] body,
+[data-theme="dark"] html {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .card,
+[data-theme="dark"] .product-card,
+[data-theme="dark"] .carousel-product-card {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #374151 !important;
+}
+
+/* === OVERRIDE ABSOLUTO PARA ELEMENTOS PROBLEMÁTICOS === */
+* {
+  color: inherit !important;
+}
+
+/* Elementos que definitivamente deben ser blancos */
+.navbar *,
+button *,
+.btn * {
+  color: #ffffff !important;
+}
+
+/* === DEPURACIÓN VISUAL === */
+/* Descomentar para ver elementos problemáticos */
+/*
+[style*="color: white"],
+[style*="color: #fff"] {
+  background: red !important;
+  outline: 2px solid red !important;
+}
+*/
